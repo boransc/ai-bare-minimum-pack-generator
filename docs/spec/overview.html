@@ -1,0 +1,607 @@
+<title>Bare Minimum Pack Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+  :root {
+    --paper:      #F6F7F8;
+    --surface:    #FFFFFF;
+    --ink:        #15191E;
+    --muted:      #5C6672;
+    --faint:      #8B959F;
+    --rule:       #DCE1E6;
+    --rule-soft:  #EAEDF0;
+    --accent:     #8C2A2A;
+    --accent-bg:  #F6EDEC;
+    --ok:         #2F5D4A;
+
+    --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --f-body:    "Manrope", "Segoe UI", system-ui, sans-serif;
+    --f-mono:    "DM Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+    --measure: 66ch;
+    --step-0: 1rem;
+    --step-1: 1.125rem;
+    --step-2: 1.375rem;
+    --step-3: 1.75rem;
+    --step-4: 2.5rem;
+    --step-5: 3.25rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #111418;
+      --surface:   #181C21;
+      --ink:       #E7EBEF;
+      --muted:     #9AA4AE;
+      --faint:     #6F7983;
+      --rule:      #2A3037;
+      --rule-soft: #21262C;
+      --accent:    #D97C71;
+      --accent-bg: #241A19;
+      --ok:        #7FB79E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:     #111418;
+    --surface:   #181C21;
+    --ink:       #E7EBEF;
+    --muted:     #9AA4AE;
+    --faint:     #6F7983;
+    --rule:      #2A3037;
+    --rule-soft: #21262C;
+    --accent:    #D97C71;
+    --accent-bg: #241A19;
+    --ok:        #7FB79E;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: var(--step-0);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 78rem;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 3rem) 6rem;
+  }
+
+  /* ---- masthead ---- */
+  .masthead {
+    display: grid;
+    gap: 1.5rem;
+    padding-bottom: 2.25rem;
+    border-bottom: 2px solid var(--ink);
+  }
+  .kicker {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+  h1 {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: clamp(2.25rem, 6vw, var(--step-5));
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    margin: 0;
+    max-width: 22ch;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-family: var(--f-display);
+    font-size: clamp(1.1rem, 2.2vw, var(--step-2));
+    line-height: 1.45;
+    color: var(--muted);
+    margin: 0;
+    max-width: 52ch;
+  }
+  .stamp {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.5rem;
+  }
+
+  /* ---- section scaffolding ---- */
+  section { padding-top: 3.5rem; }
+
+  .sec-head {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 1.25rem;
+    align-items: baseline;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .sec-mark {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-top: 0.5rem;
+  }
+  h2 {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 3.5vw, var(--step-3));
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .body { max-width: var(--measure); }
+  .body p { margin: 0 0 1.1rem; }
+  .body p:last-child { margin-bottom: 0; }
+  .indent { padding-left: 6.75rem; }
+  @media (max-width: 40rem) {
+    .sec-head { grid-template-columns: 1fr; gap: 0.35rem; }
+    .sec-mark { padding-top: 0; }
+    .indent { padding-left: 0; }
+  }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  /* ---- screens (a real sequence) ---- */
+  .screens { display: grid; gap: 0; }
+  .screen {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 1.25rem;
+    padding: 1.75rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .screen:first-child { border-top: 1px solid var(--rule-soft); }
+  .screen-num {
+    font-family: var(--f-mono);
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--rule);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .screen h3 {
+    font-family: var(--f-body);
+    font-size: var(--step-1);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+  }
+  .screen p { margin: 0 0 0.6rem; max-width: 62ch; color: var(--muted); }
+  .screen p:last-child { margin-bottom: 0; }
+  .screen p.lead { color: var(--ink); }
+  @media (max-width: 40rem) {
+    .screen { grid-template-columns: 1fr; gap: 0.5rem; }
+    .screen-num { font-size: 1rem; }
+  }
+
+  /* ---- journey ---- */
+  .journey {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    max-width: 60rem;
+  }
+  .journey ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 1rem;
+  }
+  .journey li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+  .journey li::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-top: 0.62rem;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .journey li span { display: block; max-width: 62ch; }
+  .journey li b { font-weight: 600; }
+
+  /* ---- pipeline ---- */
+  .pipe { display: grid; gap: 0; max-width: 62rem; counter-reset: p; }
+  .pipe-row {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 1.25rem;
+    padding: 1.15rem 0;
+    border-bottom: 1px dashed var(--rule);
+    align-items: start;
+  }
+  .pipe-row:first-child { border-top: 1px dashed var(--rule); }
+  .pipe-row::before {
+    counter-increment: p;
+    content: counter(p, decimal-leading-zero);
+    font-family: var(--f-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    padding-top: 0.28rem;
+    letter-spacing: 0.06em;
+  }
+  .pipe-row div { max-width: 64ch; }
+  .pipe-row b { font-weight: 600; display: block; margin-bottom: 0.15rem; }
+  .pipe-row small { color: var(--muted); font-size: 0.95rem; line-height: 1.55; }
+
+  /* ---- days ---- */
+  .days {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .day { background: var(--surface); padding: 1.5rem 1.4rem; }
+  .day-label {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.9rem;
+  }
+  .day h3 {
+    font-family: var(--f-display);
+    font-size: var(--step-1);
+    font-weight: 600;
+    margin: 0 0 0.7rem;
+    line-height: 1.25;
+  }
+  .day p { margin: 0 0 0.7rem; color: var(--muted); font-size: 0.95rem; }
+  .day p:last-child { margin-bottom: 0; }
+  .day .end {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--rule-soft);
+    color: var(--ink);
+    font-size: 0.95rem;
+  }
+  .day .end b {
+    display: block;
+    font-family: var(--f-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 0.3rem;
+    font-weight: 400;
+  }
+
+  /* ---- not building ---- */
+  .nope { display: grid; gap: 0; max-width: 62rem; }
+  .nope-row {
+    display: grid;
+    grid-template-columns: minmax(11rem, 16rem) 1fr;
+    gap: 1.25rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+    align-items: baseline;
+  }
+  .nope-row:first-child { border-top: 1px solid var(--rule-soft); }
+  .nope-row dt {
+    font-weight: 600;
+    color: var(--faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 1px;
+  }
+  .nope-row dd { margin: 0; color: var(--muted); max-width: 58ch; }
+  @media (max-width: 40rem) {
+    .nope-row { grid-template-columns: 1fr; gap: 0.2rem; }
+  }
+
+  /* ---- red line callout ---- */
+  .redline {
+    margin-top: 2rem;
+    background: var(--accent-bg);
+    border-left: 3px solid var(--accent);
+    padding: 1.15rem 1.4rem;
+    max-width: 60rem;
+    border-radius: 0 2px 2px 0;
+  }
+  .redline p { margin: 0; max-width: 64ch; }
+  .redline b { color: var(--accent); font-weight: 600; }
+
+  footer {
+    margin-top: 4.5rem;
+    padding-top: 1.75rem;
+    border-top: 2px solid var(--ink);
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.5rem;
+  }
+
+  a { color: var(--accent); }
+  a:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="kicker">Governance AI &nbsp;·&nbsp; Build overview</p>
+    <h1>The Bare Minimum Pack Generator</h1>
+    <p class="standfirst">A short web tool that tells an organisation whether its use of AI is under
+      minimum control, and hands it the four documents that fix the gap.</p>
+    <p class="stamp"><span>Three-day build</span><span>Five screens</span><span>No login</span><span>1 September 2026</span></p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="sec-mark">What it is</p>
+      <h2>One honest answer, and the paperwork to act on it</h2>
+    </div>
+    <div class="body indent">
+      <p>An organisation answers a few questions about itself, then works through Governance AI's
+        eight-point AI Minimum Standard. It immediately gets a straight verdict on whether the minimum
+        is in place, the exact things it cannot yet evidence, and a version of the Bare Minimum Pack
+        written with its own situation in mind.</p>
+      <p>It is for the person who runs a small or mid-sized organisation, knows their staff are already
+        using AI, and has no idea whether anyone is governing it. Ten minutes, no account, nothing to buy.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="sec-mark">The screens</p>
+      <h2>Five screens, in the order a person meets them</h2>
+    </div>
+
+    <div class="screens">
+      <article class="screen">
+        <p class="screen-num">01</p>
+        <div>
+          <h3>The front page</h3>
+          <p class="lead">What this is, what they will get, and how long it takes.</p>
+          <p>One button: start. A short note that no account is needed and they can come back to their
+            pack later using a private link.</p>
+        </div>
+      </article>
+
+      <article class="screen">
+        <p class="screen-num">02</p>
+        <div>
+          <h3>Eight questions about them</h3>
+          <p class="lead">One question per step, all multiple choice.</p>
+          <p>Their sector, how many people work there, how much AI is being used and what for, whether
+            it touches confidential or personal information, whether they are regulated, whether AI plays
+            any part in decisions about people, and whether anyone senior is actually accountable for it.
+            Organisation name is optional.</p>
+          <p>Nothing sensitive is ever asked. "Don't know" is a real answer on most of them, and it is
+            treated as something to find out rather than a wrong answer.</p>
+        </div>
+      </article>
+
+      <article class="screen">
+        <p class="screen-num">03</p>
+        <div>
+          <h3>The eight-point check</h3>
+          <p class="lead">The assessment itself. Eight cards, one per point.</p>
+          <p>Each card holds the two or three specific statements the Standard actually asks about, and
+            each is answered yes or no. A point only counts as a yes when every statement under it is a
+            yes, and a yes means there is real evidence behind it, not a good intention.</p>
+        </div>
+      </article>
+
+      <article class="screen">
+        <p class="screen-num">04</p>
+        <div>
+          <h3>Their result and their pack</h3>
+          <p class="lead">The whole point of the product, on one long page.</p>
+          <p>It opens with the verdict in plain words: the minimum is in place, or it is not. The score
+            out of eight sits underneath it, not above it. If either red-line point has failed, that is
+            called out before anything else.</p>
+          <p>Below that: what to do first, the full point-by-point breakdown showing exactly which
+            statements are missing, the thirty-day plan, the policy template and the staff note. Then a
+            print button, a private link to come back to — copy it, or have it emailed — and a route into the full
+            governance review.</p>
+          <p>The email is optional, carries the link and nothing else, and unlocks nothing. Marketing
+            consent is a separate box, unticked.</p>
+        </div>
+      </article>
+
+      <article class="screen">
+        <p class="screen-num">05</p>
+        <div>
+          <h3>The same pack, later</h3>
+          <p class="lead">What their private link opens.</p>
+          <p>Exactly the page they saw before, unchanged, with its original date on it. The link works
+            for ninety days and the saved pack is deleted after a year. Anyone holding the link can open
+            it, and they are told so.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="sec-mark">One journey</p>
+      <h2>A housing association, start to finish</h2>
+    </div>
+    <div class="indent">
+      <div class="journey">
+        <ol>
+          <li><span>A director follows a link from a Governance AI newsletter and lands on the front page.
+            She reads two paragraphs and presses start.</span></li>
+          <li><span>She answers the eight questions in about ninety seconds. Housing. Sixty staff. AI used
+            regularly in some teams. Drafting, data analysis, meeting notes. It touches tenant information
+            routinely. They are regulated. <b>It plays a part in decisions about people.</b> Nobody senior owns it.</span></li>
+          <li><span>She works through the eight points. Some she can answer straight away. On the data
+            rules she pauses, realises nothing has ever been written down, and answers no honestly.</span></li>
+          <li><span>She presses <b>Generate my pack</b> and waits a few seconds.</span></li>
+          <li><span>The page opens with <b>The minimum is not met</b>. Underneath: five of eight points
+            evidenced. Directly below that, a marked block explaining that the data rules and the human
+            check are red lines, and a no against either means the minimum is not met whatever the total
+            says.</span></li>
+          <li><span>The opening paragraph describes her own situation back to her, and a short scenario
+            underneath it shows the shape of how this goes wrong for an organisation like hers.</span></li>
+          <li><span>She scrolls through the four documents, prints the pack for Thursday's board meeting,
+            and copies her private link into her calendar for next month.</span></li>
+          <li><span>At the bottom she sees why the fuller review is being recommended to her specifically:
+            no senior owner, and AI touching decisions about people. She books a call.</span></li>
+        </ol>
+      </div>
+
+      <div class="redline">
+        <p><b>The design decision that matters most:</b> a seven-out-of-eight organisation that fails the
+          human-check point is told plainly that the minimum is not met. The number never overrides the
+          red line. That honesty is the whole reason anyone would trust the result.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="sec-mark">Under the hood</p>
+      <h2>What happens when they press Generate my pack</h2>
+    </div>
+    <div class="indent">
+      <div class="pipe">
+        <div class="pipe-row"><div><b>The answers go to the server in one request.</b><small>Nothing is
+          worked out in the browser, so the scoring rules cannot be poked at from outside.</small></div></div>
+        <div class="pipe-row"><div><b>The score is worked out by ordinary code, not by AI.</b><small>Each
+          point passes only if every statement under it passes. Then the red-line rule is applied, then the
+          band. The verdict is decided before anything else happens.</small></div></div>
+        <div class="pipe-row"><div><b>The gaps are turned into an ordered list of actions.</b><small>Red
+          lines first, then Karl's own thirty-day sequence. The order comes from the source document, never
+          from a model.</small></div></div>
+        <div class="pipe-row"><div><b>A small, tightly fenced request goes to the AI.</b><small>It is shown
+          only the relevant paragraphs of the source document and the multiple-choice answers. It never sees
+          the regulator's name, never sees free text, and is asked for a handful of short, capped
+          sentences: an opening paragraph, a risk scenario, and one line per failed point.</small></div></div>
+        <div class="pipe-row"><div><b>Everything it returns is checked before anyone sees it.</b><small>Wrong
+          shape, too long, or any sign of an invented rule — a named law, a regulator, a deadline, a "you
+          must" — and that sentence is thrown away and replaced with the source document's own wording.
+          The page always renders. The worst case is a pack that is less personal, never one that is
+          wrong.</small></div></div>
+        <div class="pipe-row"><div><b>The pack is assembled from fixed content plus those few
+          sentences.</b><small>The eight points, the policy and the staff note are reproduced exactly as
+          written. The AI has no way to alter them, because it is never asked for them.</small></div></div>
+        <div class="pipe-row"><div><b>The finished pack is saved under a long random link and returned in
+          the same response.</b><small>The page renders from what came back, so it never has to wait for
+          the save to settle. The saved copy deletes itself after a year.</small></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="sec-mark">Three days</p>
+      <h2>What exists at the end of each day</h2>
+    </div>
+    <div class="indent">
+      <div class="days">
+        <div class="day">
+          <p class="day-label">Day one</p>
+          <h3>The honest answer, with no AI in it</h3>
+          <p>The source document is turned into structured content in the repo. The eight questions and the
+            eight-point check are built as one stepped form. The scoring, the red-line override and the
+            verdict are written and tested properly.</p>
+          <p class="end"><b>At the end of the day</b>Someone can complete the whole thing and get a correct,
+            honest result on screen. It looks plain and there is no tailoring, but every number and every
+            verdict is right.</p>
+        </div>
+        <div class="day">
+          <p class="day-label">Day two</p>
+          <h3>The pack, and the tailoring</h3>
+          <p>The four documents render in full. The AI call goes in, with its checks and its fallbacks, and
+            is tested against nonsense and against deliberate attempts to make it invent a rule. The print
+            layout is built.</p>
+          <p class="end"><b>At the end of the day</b>A complete, tailored, printable pack. Turn the AI off
+            and it still works — that is the test that matters.</p>
+        </div>
+        <div class="day">
+          <p class="day-label">Day three</p>
+          <h3>Saving, coming back, and polish</h3>
+          <p>The private link, emailing it on request, the ninety-day and twelve-month lifetimes, a cap so
+            nobody can hammer the AI, keyboard and screen-reader passes, and the wording that tells people
+            plainly what is stored and who can see it.</p>
+          <p>Email sends from a test address until Governance AI adds the DNS records for their own domain.
+            That is their dependency, not a blocker.</p>
+          <p class="end"><b>At the end of the day</b>Something you can put in front of a real
+            organisation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="sec-mark">Not building</p>
+      <h2>Deliberately left out</h2>
+    </div>
+    <div class="indent">
+      <dl class="nope">
+        <div class="nope-row"><dt>Word downloads</dt><dd>Printing gives them a PDF. Getting the policy into
+          their own template can wait.</dd></div>
+        <div class="nope-row"><dt>A second AI pass</dt><dd>Checking the AI's work with more AI doubles the
+          cost and the wait. The plain checks catch what matters. Earn it later.</dd></div>
+        <div class="nope-row"><dt>Saving ticked boxes</dt><dd>The checklist prints and can be worked
+          through on paper. Remembering which boxes are ticked is next week's problem.</dd></div>
+        <div class="nope-row"><dt>An admin dashboard</dt><dd>Everything it would need is being stored. Read
+          it out of storage until there is enough of it to be worth a screen.</dd></div>
+        <div class="nope-row"><dt>Lead indexes and analytics</dt><dd>Machinery for a scale that does not
+          exist yet. Five real users will teach more.</dd></div>
+        <div class="nope-row"><dt>Re-taking the assessment over time</dt><dd>Worth building once people are
+          actually coming back. The stored data is shaped so it can be added without a rewrite.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="sec-mark">Still open</p>
+      <h2>Two things only the client can settle</h2>
+    </div>
+    <div class="body indent">
+      <p>Someone at Governance AI has to confirm that the structured version of the Pack is a faithful copy
+        of the original, before it goes anywhere real. Every generated document inherits it.</p>
+      <p>And nobody has yet said whether coming back to a saved pack should push the ninety days further
+        out, or whether the link simply dies ninety days after it was made. The build assumes it dies.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>The AI Bare Minimum Pack does not constitute legal advice</span>
+    <span>Built on The AI Transparency Framework™ by Karl George MBE</span>
+    <span>governanceai.io</span>
+  </footer>
+
+</div>
