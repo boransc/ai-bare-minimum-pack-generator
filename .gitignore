@@ -52,3 +52,13 @@ coverage/
 # not be in its history.
 # ---------------------------------------------------------------------------
 docs/examples/
+
+# from create-next-app defaults
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+*.pem
+.pnpm-debug.log*
