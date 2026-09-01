@@ -27,7 +27,6 @@ export const CONTROLS: Control[] = [
     summary:
       "One named person is accountable for how AI is used across the organisation, and AI is a standing item at least quarterly.",
     redLine: false,
-    planWeek: 1,
     goodEnough:
       "Good enough is a named person with the authority to approve tools and the time to maintain a list. In a small business that is usually the MD, the operations lead or the finance director, and it does not need to be anyone technical.",
     mistakeToAvoid:
@@ -62,7 +61,6 @@ export const CONTROLS: Control[] = [
     summary:
       "You hold a written list of approved AI tools and a simple register of what is actually in use.",
     redLine: false,
-    planWeek: 1,
     goodEnough:
       "Good enough is a single spreadsheet listing every AI tool in use, who uses it, what for, and whether it touches client, personal or confidential data. Build it from what people actually tell you.",
     mistakeToAvoid:
@@ -97,7 +95,6 @@ export const CONTROLS: Control[] = [
     summary:
       "A policy exists, it has been issued to everyone, and people have confirmed they have read it.",
     redLine: false,
-    planWeek: 3,
     goodEnough:
       "Good enough is the template in this pack, with the bracketed fields filled in, approved at a meeting with the decision minuted, and issued to everyone with a signed acknowledgement.",
     mistakeToAvoid:
@@ -131,7 +128,6 @@ export const CONTROLS: Control[] = [
     summary:
       "People know exactly what must never be entered into an AI tool, and which tools are cleared for which categories of data.",
     redLine: true,
-    planWeek: 2,
     goodEnough:
       "Good enough is one paragraph everybody can recite: what never goes in, which tools are cleared for what, and who to ask when you are unsure.",
     mistakeToAvoid:
@@ -166,7 +162,6 @@ export const CONTROLS: Control[] = [
     summary:
       "Staff can ask for a new tool easily, and they can declare what they are already using without fear of what happens next.",
     redLine: false,
-    planWeek: 1,
     goodEnough:
       "Good enough is an easy request route with a fast answer, plus a one-off amnesty so people can declare what they are already using without consequence.",
     mistakeToAvoid:
@@ -201,7 +196,6 @@ export const CONTROLS: Control[] = [
     summary:
       "No AI-assisted work reaches a client, a customer, a regulator or the board without a named human verifying it.",
     redLine: true,
-    planWeek: 2,
     goodEnough:
       "Good enough is a rule everyone knows: nothing AI has touched leaves the organisation until a named person has checked the facts, figures and sources, and for anything significant, a second qualified person has signed it off.",
     mistakeToAvoid:
@@ -249,7 +243,6 @@ export const CONTROLS: Control[] = [
     summary:
       "Your AI use is visible to the people affected by it, at a level proportionate to the contribution.",
     redLine: false,
-    planWeek: 4,
     goodEnough:
       "Good enough is a standing statement on your website, a line in your email footer, disclosure of note-takers in external meetings, and a declaration on client deliverables where AI made a substantive contribution.",
     mistakeToAvoid:
@@ -294,7 +287,6 @@ export const CONTROLS: Control[] = [
     summary:
       "Everyone has had at least a short session on responsible AI use, and there is a route to report when something goes wrong.",
     redLine: false,
-    planWeek: 4,
     goodEnough:
       "Good enough is a single hour for everyone covering the policy, the data rules, verification and how to report a problem, repeated annually and included in induction.",
     mistakeToAvoid:

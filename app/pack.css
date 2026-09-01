@@ -1,0 +1,561 @@
+/**
+ * The generated pack: cover, verdict, red-line block, breakdown, plan,
+ * checklist and the Full Playbook pathway.
+ *
+ * Kept separate from globals.css because this is also the print artefact, and
+ * the print rules at the bottom need to sit next to what they are overriding.
+ */
+
+.pack {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 clamp(24px, 5vw, 64px) 100px;
+}
+
+.pack-cover {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+  padding: clamp(48px, 8vw, 96px) 0 clamp(30px, 4vw, 46px);
+  border-bottom: 2px solid var(--ink);
+}
+
+.cover-context {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.cover-meta {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 22px 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   Verdict. The headline is the verdict; the score is deliberately secondary,
+   because a total of 7 can sit above a failed red line and must not read as
+   the answer.
+   -------------------------------------------------------------------------- */
+
+.verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(30px, 6vw, 80px);
+  align-items: center;
+  padding: clamp(38px, 6vw, 64px) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.verdict.is-not-met .h2 {
+  color: var(--red);
+}
+
+.verdict.is-met .h2 {
+  color: var(--green);
+}
+
+.verdict .lede {
+  margin: 18px 0 0;
+}
+
+.verdict-score {
+  text-align: right;
+  border-left: 1px solid var(--line);
+  padding-left: clamp(24px, 4vw, 46px);
+}
+
+.verdict-score strong {
+  display: block;
+  font: 500 clamp(64px, 9vw, 104px) / 1 var(--serif);
+  letter-spacing: -0.05em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.verdict-score span {
+  display: block;
+  font: 500 10px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 10px 0 0 auto;
+  max-width: 14ch;
+}
+
+/* --------------------------------------------------------------------------
+   Red line. The one block on the page that must not be skimmed past.
+   -------------------------------------------------------------------------- */
+
+.red-line-block {
+  background: var(--red-bg);
+  border-left: 4px solid var(--red);
+  padding: clamp(24px, 4vw, 38px);
+  margin: 34px 0;
+}
+
+.red-line-block .red-line-tag {
+  display: inline-block;
+  margin: 0 0 14px;
+}
+
+.red-line-block h3 {
+  color: var(--red);
+  margin: 0 0 14px;
+  font-size: 22px;
+}
+
+.red-line-block p {
+  margin: 0;
+  max-width: 74ch;
+  color: var(--ink-soft);
+}
+
+.red-line-emphasis {
+  margin-top: 14px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+/* --------------------------------------------------------------------------
+   Model-written text. A gold margin rule marks every sentence a model wrote,
+   so the reader can always tell Karl's words from generated ones.
+   -------------------------------------------------------------------------- */
+
+.tailored-opening,
+.tailored-scenario {
+  border-left: 2px solid var(--gold);
+  padding-left: 22px;
+  margin: 34px 0;
+}
+
+.tailored-text {
+  font: 400 clamp(17px, 2vw, 21px) / 1.55 var(--serif);
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 68ch;
+}
+
+.tailored-inline {
+  border-left: 2px solid var(--gold);
+  padding-left: 14px;
+  margin: 12px 0 0;
+  font-style: italic;
+  max-width: 68ch;
+}
+
+/* --------------------------------------------------------------------------
+   Sections
+   -------------------------------------------------------------------------- */
+
+.section-block {
+  padding: clamp(44px, 6vw, 78px) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.section-block .h2 {
+  margin-bottom: 18px;
+}
+
+.tinted-block {
+  background: var(--sand);
+  margin: 0 calc(-1 * clamp(24px, 5vw, 64px));
+  padding-left: clamp(24px, 5vw, 64px);
+  padding-right: clamp(24px, 5vw, 64px);
+  border-bottom: 0;
+}
+
+.first-actions {
+  list-style: none;
+  margin: 30px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.first-actions li {
+  background: var(--white);
+  padding: 22px 24px;
+  display: grid;
+  gap: 6px;
+}
+
+.first-action-point {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.first-actions strong {
+  font: 600 18px var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.first-actions p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 68ch;
+}
+
+/* --------------------------------------------------------------------------
+   Point-by-point breakdown
+   -------------------------------------------------------------------------- */
+
+.control-results {
+  display: grid;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.control-result {
+  background: var(--white);
+  border: 1px solid var(--line);
+  padding: 24px;
+  break-inside: avoid;
+}
+
+.control-result.red-line {
+  border-left: 3px solid var(--red);
+}
+
+.control-result.is-gap {
+  background: #fdfcf8;
+}
+
+.control-result h3 {
+  font: 600 19px var(--serif);
+  letter-spacing: -0.025em;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.control-result p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 66ch;
+}
+
+.control-status {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.control-result.is-met .control-status {
+  color: var(--green);
+  border-color: #b6cfc4;
+  background: var(--mint);
+}
+
+.control-result.is-gap .control-status {
+  color: var(--gold);
+  border-color: #e2cfa8;
+  background: #faf3e6;
+}
+
+.unmet-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  gap: 10px;
+}
+
+.unmet-list li {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   The three things that actually go wrong
+   -------------------------------------------------------------------------- */
+
+.wrongs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.wrongs h3 {
+  margin-bottom: 10px;
+}
+
+.wrongs p {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.pattern {
+  margin: 34px 0 0;
+  font: 500 clamp(17px, 2vw, 22px) / 1.5 var(--serif);
+  max-width: 70ch;
+}
+
+/* --------------------------------------------------------------------------
+   Thirty-day plan and checklist
+   -------------------------------------------------------------------------- */
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  margin-top: 30px;
+}
+
+.plan-grid article {
+  background: var(--white);
+  padding: 22px 20px;
+}
+
+.plan-grid article.is-priority {
+  background: var(--mint);
+}
+
+.plan-grid p {
+  font-size: 14px;
+  margin: 14px 0 12px;
+  color: var(--ink-soft);
+}
+
+.plan-grid small {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.checklist {
+  list-style: none;
+  margin: 30px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.checklist li {
+  background: var(--white);
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  gap: 16px;
+  align-items: start;
+  break-inside: avoid;
+}
+
+.checklist li.red-line {
+  border-left: 3px solid var(--red);
+}
+
+.check-box {
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--muted);
+  margin-top: 3px;
+}
+
+.checklist strong {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.checklist p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 66ch;
+}
+
+.check-tag {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Full Playbook pathway
+   -------------------------------------------------------------------------- */
+
+.playbook-cta {
+  background: var(--green);
+  color: #eaf3ef;
+  margin: 0 calc(-1 * clamp(24px, 5vw, 64px));
+  padding: clamp(48px, 7vw, 88px) clamp(24px, 5vw, 64px);
+}
+
+.playbook-cta .h2,
+.playbook-cta .lede {
+  color: #fff;
+}
+
+.playbook-cta .eyebrow {
+  color: #9ac5b6;
+}
+
+.trigger-list {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.trigger-list li {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 14px;
+  font: 500 11px var(--mono);
+  letter-spacing: 0.05em;
+  color: #cfe4da;
+}
+
+.playbook-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 28px;
+  margin: 40px 0 0;
+}
+
+.playbook-grid h3 {
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.playbook-grid p {
+  color: #b8d5c9;
+  font-size: 13px;
+  margin: 0;
+}
+
+.playbook-outro {
+  margin: 36px 0 0;
+  color: #9ac5b6;
+  font-size: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Transparency and footer
+   -------------------------------------------------------------------------- */
+
+.transparency-note p {
+  max-width: 74ch;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pack-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  padding-top: 30px;
+  font: 500 9px var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .verdict {
+    grid-template-columns: 1fr;
+  }
+  .verdict-score {
+    text-align: left;
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 22px;
+  }
+  .verdict-score span {
+    margin-left: 0;
+  }
+  .checklist li {
+    grid-template-columns: 20px 1fr;
+  }
+  .check-tag {
+    grid-column: 2;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Print. The pack is meant to go to a board meeting on paper.
+   -------------------------------------------------------------------------- */
+
+@media print {
+  .pack {
+    max-width: none;
+    padding: 0;
+  }
+
+  .tinted-block,
+  .playbook-cta {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .playbook-cta {
+    background: none;
+    color: var(--ink);
+    border-top: 2px solid var(--ink);
+  }
+
+  .playbook-cta .h2,
+  .playbook-cta .lede,
+  .playbook-grid h3 {
+    color: var(--ink);
+  }
+
+  .playbook-grid p,
+  .playbook-outro,
+  .playbook-cta .eyebrow {
+    color: var(--muted);
+  }
+
+  .trigger-list li {
+    border-color: var(--line);
+    color: var(--ink);
+  }
+
+  .section-block,
+  .verdict {
+    break-inside: avoid;
+    padding: 22pt 0;
+  }
+
+  .red-line-block {
+    break-inside: avoid;
+  }
+}

@@ -63,8 +63,6 @@ export interface Control {
   goodEnough: string;
   /** Verbatim "The mistake to avoid:" sentence from the guidance note. */
   mistakeToAvoid: string;
-  /** Drives checklist ordering for non-red-line controls. */
-  planWeek: PlanWeek;
 }
 
 /** One of the source's six governance drivers. */
@@ -212,7 +210,13 @@ export interface ChecklistItem {
   /** Absent on "find out" items, which come from the wizard rather than a control. */
   controlNumber?: ControlNumber;
   redLine: boolean;
-  /** Which week of the source thirty-day plan this sits in. Absent on "find out" items. */
+  /**
+   * Which week of the source thirty-day plan this sits in.
+   *
+   * Absent on "find out" items, and also absent for point 6: the source's
+   * thirty-day table does not schedule verification, treating it as a standing
+   * practice rather than a week's work. We do not invent a week for it.
+   */
   planWeek?: PlanWeek;
   kind: "remediation" | "find-out";
 }

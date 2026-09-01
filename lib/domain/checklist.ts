@@ -16,15 +16,24 @@
  * priority score here for a model to rationalise.
  */
 
-import { CONTROLS_BY_NUMBER } from "@/content/v1/controls";
-import { PLAN_CONTROL_ORDER } from "@/content/v1/guidance";
+import { PLAN_CONTROL_ORDER, THIRTY_DAY_PLAN } from "@/content/v1/guidance";
 import { FIND_OUT_ACTIONS } from "@/content/v1/wizard";
 import type {
   Assessment,
   ChecklistItem,
   ControlNumber,
+  PlanWeek,
   WizardAnswers,
 } from "./types";
+
+/**
+ * Which week of the source plan a control belongs to, or undefined if the plan
+ * does not schedule it. Point 6 is the real case: the source treats
+ * verification as a standing practice, not a week's task.
+ */
+function weekFor(control: ControlNumber): PlanWeek | undefined {
+  return THIRTY_DAY_PLAN.find((entry) => entry.controls.includes(control))?.week;
+}
 
 /** Position of a control in the source thirty-day plan. Unlisted controls sort last. */
 function planPosition(control: ControlNumber): number {
@@ -47,7 +56,7 @@ function remediationItems(assessment: Assessment): ChecklistItem[] {
       detail: sub.action.detail,
       controlNumber: control.number,
       redLine: control.redLine,
-      planWeek: CONTROLS_BY_NUMBER.get(control.number)?.planWeek,
+      planWeek: weekFor(control.number),
       kind: "remediation" as const,
     })),
   );
