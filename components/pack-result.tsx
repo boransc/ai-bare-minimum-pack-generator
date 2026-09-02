@@ -20,6 +20,7 @@ import { TailoredBlock, TailoringStatusNote } from "./tailored-block";
 import { SavePack } from "./save-pack";
 import { PolicyDocument } from "./policy-document";
 import { StaffNoteDocument } from "./staff-note-document";
+import { DocumentFieldsProvider } from "./document-fields-context";
 import type { ChecklistItem } from "@/lib/domain/types";
 
 interface PackResultProps {
@@ -31,6 +32,8 @@ interface PackResultProps {
    */
   token?: string;
   checklistState?: Record<string, boolean>;
+  /** The organisation's own answers to the bracketed fields in Parts 3 and 4. */
+  documentFields?: Record<string, string>;
   /** Whether mail can actually be delivered. Decided on the server. */
   canSendEmail?: boolean;
 }
@@ -39,6 +42,7 @@ export function PackResult({
   pack,
   token,
   checklistState,
+  documentFields,
   canSendEmail = false,
 }: PackResultProps) {
   const { assessment, checklist, playbookTriggers } = pack;
@@ -256,26 +260,38 @@ export function PackResult({
         <Checklist checklist={checklist} token={token} checklistState={checklistState} />
       </section>
 
-      {/* Part 3 — the policy template -------------------------------------- */}
-      <section className="section-block">
-        <h2 className="h2">The AI usage policy.</h2>
-        <p className="lede">
-          Adopt this as your own. Fill in the bracketed fields, approve it at a
-          meeting, issue it to everyone, and collect acknowledgements. The wording
-          is Karl&rsquo;s and is reproduced unchanged.
-        </p>
-        <PolicyDocument orgName={pack.orgName} />
-      </section>
+      {/* Parts 3 and 4 — the two documents an organisation actually issues.
+          One provider around both: [role], [date] and [name] appear in each,
+          and the server keeps one value per field, so they must not be allowed
+          to disagree on screen. */}
+      <DocumentFieldsProvider token={token} initialFields={documentFields ?? {}}>
+        <section className="section-block">
+          <h2 className="h2">The AI usage policy.</h2>
+          <p className="lede">
+            Adopt this as your own. Fill in the bracketed fields, approve it at a
+            meeting, issue it to everyone, and collect acknowledgements. The
+            wording is Karl&rsquo;s and is reproduced unchanged.
+          </p>
+          <PolicyDocument
+            orgName={pack.orgName}
+            token={token}
+            documentFields={documentFields}
+          />
+        </section>
 
-      {/* Part 4 — the staff note ------------------------------------------- */}
-      <section className="section-block">
-        <h2 className="h2">The staff note.</h2>
-        <p className="lede">
-          Send this to everyone on the day the policy is approved. The last part is
-          a do and don&rsquo;t sheet to print and pin up.
-        </p>
-        <StaffNoteDocument orgName={pack.orgName} />
-      </section>
+        <section className="section-block">
+          <h2 className="h2">The staff note.</h2>
+          <p className="lede">
+            Send this to everyone on the day the policy is approved. The last part
+            is a do and don&rsquo;t sheet to print and pin up.
+          </p>
+          <StaffNoteDocument
+            orgName={pack.orgName}
+            token={token}
+            documentFields={documentFields}
+          />
+        </section>
+      </DocumentFieldsProvider>
 
       {/* Full Playbook ----------------------------------------------------- */}
       <section className="playbook-cta">
@@ -354,6 +370,8 @@ function Checklist({
   checklist: ChecklistItem[];
   token?: string;
   checklistState?: Record<string, boolean>;
+  /** The organisation's own answers to the bracketed fields in Parts 3 and 4. */
+  documentFields?: Record<string, string>;
   /** Whether mail can actually be delivered. Decided on the server. */
   canSendEmail?: boolean;
 }) {

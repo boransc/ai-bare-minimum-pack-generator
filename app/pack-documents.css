@@ -195,6 +195,78 @@
 }
 
 /* --------------------------------------------------------------------------
+   Editable bracketed fields (a returnable, saved pack only -- see
+   components/document-fields-context.tsx). An empty one should read as an
+   invitation to type, so it keeps the same sand fill and italic as the
+   static bracket it replaces; it just also accepts input.
+   -------------------------------------------------------------------------- */
+
+.doc-bracket-field {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: baseline;
+}
+
+.doc-bracket-input {
+  font: inherit;
+  font-style: italic;
+  color: var(--ink-soft);
+  background: var(--sand);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 1px 5px;
+
+  /* Grow with the content, so a filled field reads as part of the sentence
+     rather than a long name scrolling inside a fixed 104px box. field-sizing
+     is progressive: browsers without it keep the clamped width below, which
+     is usable, just tighter. */
+  field-sizing: content;
+  width: auto;
+  min-width: 9ch;
+  max-width: 100%;
+}
+
+/* The fallback for anything that does not support field-sizing. */
+@supports not (field-sizing: content) {
+  .doc-bracket-input {
+    width: clamp(9ch, 60%, 34ch);
+  }
+}
+
+.doc-bracket-input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.doc-bracket-input:hover {
+  border-color: var(--line);
+}
+
+.doc-bracket-input:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+/* Print-only flattened text -- see the @media print block below. */
+.doc-bracket-print {
+  display: none;
+}
+
+.doc-fields-progress {
+  font: 500 13px var(--sans);
+  color: var(--muted);
+  margin: 14px 0 0;
+}
+
+@media (pointer: coarse) {
+  .doc-bracket-input {
+    min-height: 44px;
+    padding: 8px 8px;
+  }
+}
+
+/* --------------------------------------------------------------------------
    Appendix B signature block
    -------------------------------------------------------------------------- */
 
@@ -319,5 +391,28 @@
     background: none;
     text-decoration: underline;
     text-decoration-style: dotted;
+  }
+
+  /* An editable field never prints as an input, and a filled one prints as
+     plain prose -- indistinguishable from the sentence around it -- while an
+     empty one prints as a ruled blank of sensible width to complete by hand,
+     never the literal "[location]" text. */
+  .doc-bracket-input,
+  .doc-fields-status {
+    display: none !important;
+  }
+
+  .doc-bracket-print {
+    display: inline;
+    font-style: normal;
+    color: inherit;
+  }
+
+  .doc-bracket-print:empty::before {
+    content: "";
+    display: inline-block;
+    width: 9em;
+    border-bottom: 1px solid var(--ink);
+    vertical-align: -0.15em;
   }
 }

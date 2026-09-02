@@ -70,6 +70,7 @@ export default async function SavedPackPage({ params, searchParams }: PageProps)
       pack={result.pack}
       token={token}
       checklistState={result.pack.checklistState}
+      documentFields={result.pack.documentFields}
       canSendEmail={emailSendingConfigured()}
     />
   );

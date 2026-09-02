@@ -1,8 +1,13 @@
 /**
  * Part 4: the staff note, "Using AI at work", rendered ready to send.
  *
- * Server-safe: nothing here is interactive, so it renders without a client
- * boundary and prints exactly what it shows on screen.
+ * Interactive only once the pack has a token (a saved, returnable link): the
+ * bracketed fields become real inputs via DocumentFieldsProvider, and this
+ * module needs the client boundary that comes with that. On the
+ * just-generated page (no token) everything inside still renders as static
+ * text, and print always shows flattened text or a ruled blank -- see
+ * components/bracketed-text.tsx and the .doc-bracket-print rules in
+ * pack-documents.css.
  */
 
 import {
@@ -18,19 +23,50 @@ import {
   WHAT_YOU_DO_NOT_NEED_TO_DO,
   WHERE_TO_FIND_THINGS,
 } from "@/content/v1/staff-note";
+import { collectFieldIds } from "@/lib/document-fields";
 import { Bracketed } from "./bracketed-text";
+import { DocumentFieldsProvider, DocumentFieldsStatus } from "./document-fields-context";
+
+// Every string a bracket can appear in, gathered once at module load so the
+// completion count is read straight off the same source text the document
+// renders -- there is no separate list to let drift out of sync.
+const STAFF_NOTE_BRACKET_TEXTS: string[] = [
+  ...FIVE_RULES.flatMap((rule) => rule.body),
+  ...AMNESTY.body,
+  ...WHERE_TO_FIND_THINGS.rows.map((row) => row.where),
+  STAFF_NOTE_SIGN_OFF.name,
+  STAFF_NOTE_SIGN_OFF.roleLine,
+  ...DO_DONT_AT_A_GLANCE.pairs.flatMap((pair) => [pair.doText, pair.dontText]),
+];
+
+// The organisation name is substituted automatically from the wizard answer
+// and is never typed in through this document, so it doesn't belong in a
+// "fields filled" count of things the reader is actually asked to do.
+const STAFF_NOTE_FIELD_IDS = collectFieldIds(STAFF_NOTE_BRACKET_TEXTS).filter(
+  (id) => id !== "orgName",
+);
 
 interface StaffNoteDocumentProps {
   orgName: string | null;
+  /** Present only once the pack has a saved, returnable link -- see PackResult. */
+  token?: string;
+  /** This pack's saved bracketed-field values, keyed by BracketFieldId. */
+  documentFields?: Record<string, string>;
 }
 
-export function StaffNoteDocument({ orgName }: StaffNoteDocumentProps) {
+export function StaffNoteDocument({
+  orgName,
+  token,
+  documentFields = {},
+}: StaffNoteDocumentProps) {
   return (
-    <article className="doc">
+    <DocumentFieldsProvider token={token} initialFields={documentFields}>
+      <article className="doc">
       <header className="doc-head">
         <p className="doc-kind">Part 4</p>
         <h1 className="doc-title">{STAFF_NOTE_TITLE}</h1>
         <p className="doc-standfirst">{STAFF_NOTE_STANDFIRST}</p>
+        <DocumentFieldsStatus fieldIds={STAFF_NOTE_FIELD_IDS} />
       </header>
 
       <section className="doc-section">
@@ -145,6 +181,7 @@ export function StaffNoteDocument({ orgName }: StaffNoteDocumentProps) {
           </table>
         </div>
       </section>
-    </article>
+      </article>
+    </DocumentFieldsProvider>
   );
 }

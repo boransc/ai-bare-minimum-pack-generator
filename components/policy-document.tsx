@@ -1,8 +1,13 @@
 /**
  * Part 3: the AI usage policy template, rendered as an adoptable document.
  *
- * Server-safe: nothing here is interactive, so it renders without a client
- * boundary and prints exactly what it shows on screen.
+ * Interactive only once the pack has a token (a saved, returnable link): the
+ * bracketed fields become real inputs via DocumentFieldsProvider, and this
+ * module needs the client boundary that comes with that. On the
+ * just-generated page (no token) everything inside still renders as static
+ * text, and print always shows flattened text or a ruled blank -- see
+ * components/bracketed-text.tsx and the .doc-bracket-print rules in
+ * pack-documents.css.
  */
 
 import {
@@ -12,20 +17,59 @@ import {
   POLICY_STANDFIRST,
   POLICY_TITLE,
 } from "@/content/v1/policy";
+import { collectFieldIds } from "@/lib/document-fields";
 import { Bracketed } from "./bracketed-text";
+import { DocumentFieldsProvider, DocumentFieldsStatus } from "./document-fields-context";
+
+// Every string a bracket can appear in, gathered once at module load so the
+// completion count is read straight off the same source text the document
+// renders -- there is no separate list to let drift out of sync.
+const POLICY_BRACKET_TEXTS: string[] = [
+  ...POLICY_SECTIONS.flatMap((section) => {
+    if (section.kind === "prose" || section.kind === "review-table") {
+      const rows =
+        section.kind === "review-table"
+          ? section.rows.flatMap((row) => [row.date, row.approvedBy])
+          : [];
+      return [...section.body, ...rows];
+    }
+    if (section.kind === "roles-table") {
+      return section.rows.flatMap((row) => [row.who, row.responsibilities]);
+    }
+    if (section.kind === "transparency-table") {
+      return section.intro;
+    }
+    return [];
+  }),
+  APPENDIX_B.intro,
+  APPENDIX_B.statement,
+];
+
+// The organisation name is substituted automatically from the wizard answer
+// and is never typed in through this document, so it doesn't belong in a
+// "fields filled" count of things the reader is actually asked to do.
+const POLICY_FIELD_IDS = collectFieldIds(POLICY_BRACKET_TEXTS).filter(
+  (id) => id !== "orgName",
+);
 
 interface PolicyDocumentProps {
   orgName: string | null;
+  /** Present only once the pack has a saved, returnable link -- see PackResult. */
+  token?: string;
+  /** This pack's saved bracketed-field values, keyed by BracketFieldId. */
+  documentFields?: Record<string, string>;
 }
 
-export function PolicyDocument({ orgName }: PolicyDocumentProps) {
+export function PolicyDocument({ orgName, token, documentFields = {} }: PolicyDocumentProps) {
   return (
-    <article className="doc">
-      <header className="doc-head">
-        <p className="doc-kind">Part 3</p>
-        <h1 className="doc-title">{POLICY_TITLE}</h1>
-        <p className="doc-standfirst">{POLICY_STANDFIRST}</p>
-      </header>
+    <DocumentFieldsProvider token={token} initialFields={documentFields}>
+      <article className="doc">
+        <header className="doc-head">
+          <p className="doc-kind">Part 3</p>
+          <h1 className="doc-title">{POLICY_TITLE}</h1>
+          <p className="doc-standfirst">{POLICY_STANDFIRST}</p>
+          <DocumentFieldsStatus fieldIds={POLICY_FIELD_IDS} />
+        </header>
 
       {POLICY_SECTIONS.map((section) => (
         <section key={section.number} className="doc-section">
@@ -183,6 +227,7 @@ export function PolicyDocument({ orgName }: PolicyDocumentProps) {
           ))}
         </div>
       </section>
-    </article>
+      </article>
+    </DocumentFieldsProvider>
   );
 }
