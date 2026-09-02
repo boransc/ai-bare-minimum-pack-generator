@@ -119,7 +119,7 @@ export function PackFlow() {
             <div className="progress-track">
               <i
                 className="progress-bar"
-                style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+                style={{ transform: `scaleX(${step / TOTAL_STEPS})` }}
               />
             </div>
           </div>

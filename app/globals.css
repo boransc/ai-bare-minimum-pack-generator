@@ -587,9 +587,15 @@ body {
 
 .progress-bar {
   display: block;
+  width: 100%;
   height: 100%;
   background: var(--green);
-  transition: width 0.3s ease;
+  /* Full width always; the fill amount is a transform, not a width, so the
+     browser can animate it on the compositor instead of re-running layout on
+     every frame. */
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.3s ease;
 }
 
 
