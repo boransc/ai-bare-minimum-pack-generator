@@ -44,7 +44,6 @@ export default function Home() {
       <main>
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">A practical starting point for responsible AI</p>
             <h1 className="display">
               Bring the AI already in your organisation under{" "}
               <em>minimum governance.</em>
@@ -95,7 +94,6 @@ export default function Home() {
         </section>
 
         <section className="section" id="how-it-works">
-          <p className="kicker">The purpose</p>
           <div className="split-heading">
             <h2 className="h2">AI adoption usually runs ahead of the controls around it.</h2>
             <div>
@@ -106,7 +104,7 @@ export default function Home() {
         </section>
 
         <section className="section tinted">
-          <p className="kicker">How it works</p>
+          <h2 className="h3-lead">Four steps, about ten minutes.</h2>
           <div className="steps-grid">
             {STEPS.map((step) => (
               <article key={step.n}>
@@ -119,7 +117,6 @@ export default function Home() {
         </section>
 
         <section className="section">
-          <p className="kicker">The standard</p>
           <div className="split-heading">
             <h2 className="h2">Eight things any organisation should have in place.</h2>
             <div>

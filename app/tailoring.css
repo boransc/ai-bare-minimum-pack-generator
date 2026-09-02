@@ -3,23 +3,16 @@
  * apart from pack.css because this is the one piece of the pack with a
  * transient state — everything else is a still frame.
  *
- * The gold left-margin rule is how model-written text is marked everywhere
- * else in the pack, so the placeholder borrows it too: it previews where the
- * tailored sentence will land rather than looking like a distinct widget.
+ * Italic and muted, matching the voice used for the tailored text once it
+ * actually arrives, rather than a bordered widget that looks like a distinct
+ * loading component bolted onto the page.
  */
 
 .tailoring-placeholder {
-  border-left: 2px solid var(--gold);
-  padding-left: 22px;
+  font: 400 italic clamp(15px, 1.6vw, 17px) / 1.55 var(--serif);
+  color: var(--muted);
   margin: 34px 0;
   opacity: 0.7;
-}
-
-.tailoring-placeholder-text {
-  font: 400 clamp(15px, 1.6vw, 17px) / 1.55 var(--serif);
-  color: var(--muted);
-  margin: 0;
-  font-style: italic;
 }
 
 @media (prefers-reduced-motion: no-preference) {

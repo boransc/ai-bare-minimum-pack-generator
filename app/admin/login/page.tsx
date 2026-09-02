@@ -24,8 +24,7 @@ export default async function AdminLoginPage({
   return (
     <main className="admin-login">
       <form className="admin-login-card" method="post" action="/api/admin/login">
-        <p className="eyebrow">Admin</p>
-        <h1 className="h3">Enter the passcode</h1>
+        <h1 className="h3">Enter the admin passcode</h1>
         <p className="admin-login-help">
           This area lists every generated pack and its wizard answers. Access is
           restricted to a shared passcode.

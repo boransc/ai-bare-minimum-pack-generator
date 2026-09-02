@@ -20,7 +20,7 @@ export function tailoringStatusMessage(
     Object.values(tailoring.provenance).some((p) => p === "model");
 
   if (usedModel) {
-    return "A language model wrote a small number of contextual sentences, marked in the margin; it cannot alter any requirement.";
+    return "A language model wrote a small number of sentences below, set in italics; it cannot alter any requirement.";
   }
 
   return "No AI-written text appears in this pack.";
@@ -31,14 +31,20 @@ export function tailoringStatusMessage(
  * "loading" must read as calm progress, never as an error — nothing is
  * broken while this is pending. "unavailable" and "ready" with no text both
  * render nothing: the surrounding source content is already complete.
+ *
+ * The marking device is typographic, not a labelled, coloured callout box: the
+ * text sets in italic serif, distinct from the sans body copy around it, and a
+ * short caption underneath states plainly what it is. That is enough to make a
+ * model-written sentence findable without dressing it as an alert.
  */
 export function TailoredBlock({
-  kicker,
+  caption,
   text,
   status,
   variant = "opening",
 }: {
-  kicker: string;
+  /** What to call this passage in the caption beneath it, e.g. "Written for your organisation." */
+  caption: string;
   text?: string;
   status: TailoringStatus;
   variant?: "opening" | "scenario";
@@ -47,12 +53,12 @@ export function TailoredBlock({
 
   if (status === "loading") {
     return (
-      <div className={`${className} tailoring-placeholder`} aria-live="polite">
-        <p className="kicker">{kicker}</p>
-        <p className="tailoring-placeholder-text">
-          Adding notes for your organisation&hellip;
-        </p>
-      </div>
+      <p
+        className={`${className} tailoring-placeholder`}
+        aria-live="polite"
+      >
+        Adding notes for your organisation&hellip;
+      </p>
     );
   }
 
@@ -61,10 +67,10 @@ export function TailoredBlock({
   }
 
   return (
-    <div className={className}>
-      <p className="kicker">{kicker}</p>
-      <p className="tailored-text">{text}</p>
-    </div>
+    <figure className={className}>
+      <blockquote className="tailored-text">{text}</blockquote>
+      <figcaption className="tailored-caption">{caption}</figcaption>
+    </figure>
   );
 }
 

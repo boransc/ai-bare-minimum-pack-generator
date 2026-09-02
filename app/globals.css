@@ -48,6 +48,18 @@
   box-sizing: border-box;
 }
 
+/* Announced to screen readers, never shown: used where a visual label would
+   just be an eyebrow repeating the heading, but the context (which numbered
+   question, which part of the pack) is still worth saying out loud. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 /* --------------------------------------------------------------------------
    Browser surfaces.
 
@@ -153,31 +165,17 @@ body {
   margin: 0;
 }
 
-.eyebrow {
-  font: 500 11px/1.2 var(--mono);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--green);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin: 0 0 23px;
-}
+/* .eyebrow and .kicker (a small-caps label above a heading, the classic
+   AI-generated-page tell) are gone from the markup as of this pass. The
+   heading carries its own weight now; nothing here replaces them. */
 
-.eyebrow::before {
-  content: "";
-  display: inline-block;
-  width: 22px;
-  height: 1px;
-  background: currentColor;
-}
-
-.kicker {
-  font: 500 10px var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--green);
-  margin: 0 0 26px;
+/* A genuine sub-heading, used where a section's opening line is functioning
+   as a heading rather than as prose — e.g. "Four steps, about ten minutes."
+   Plain sentence case, no small-caps treatment, no label sitting above it. */
+.h3-lead {
+  font: 600 22px var(--serif);
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
 }
 
 .lede {
@@ -594,13 +592,6 @@ body {
   transition: width 0.3s ease;
 }
 
-.question-overline {
-  font: 500 10px var(--mono);
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--gold-text);
-  margin: 0 0 20px;
-}
 
 .question h1 {
   font: 500 clamp(30px, 3.6vw, 50px) / 1.08 var(--serif);
@@ -702,7 +693,6 @@ body {
 
 .assessment-note {
   background: var(--red-bg);
-  border-left: 3px solid var(--red);
   padding: 16px 20px;
   margin: 28px 0 0;
   max-width: 62ch;
@@ -727,9 +717,7 @@ body {
   margin-bottom: 14px;
 }
 
-.control-card.red-line {
-  border-left: 3px solid var(--red);
-}
+/* No border: the "Red line" tag in the card's own heading already says so. */
 
 .control-card.needs-answer {
   border-color: var(--red);

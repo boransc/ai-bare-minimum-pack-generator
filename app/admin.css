@@ -50,7 +50,6 @@
 .admin-login-error {
   color: var(--red);
   background: var(--red-bg);
-  border-left: 3px solid var(--red);
   padding: 10px 14px;
   font-size: 13px;
   margin: 0 0 18px;

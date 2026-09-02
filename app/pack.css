@@ -45,12 +45,9 @@
    -------------------------------------------------------------------------- */
 
 .verdict {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: clamp(30px, 6vw, 80px);
-  align-items: center;
   padding: clamp(38px, 6vw, 64px) 0;
   border-bottom: 1px solid var(--line);
+  max-width: 62rem;
 }
 
 .verdict.is-not-met .h2 {
@@ -61,32 +58,18 @@
   color: var(--green);
 }
 
-.verdict .lede {
-  margin: 18px 0 0;
-}
-
-.verdict-score {
-  text-align: right;
-  border-left: 1px solid var(--line);
-  padding-left: clamp(24px, 4vw, 46px);
-}
-
-.verdict-score strong {
-  display: block;
-  font: 500 clamp(64px, 9vw, 104px) / 1 var(--serif);
-  letter-spacing: -0.05em;
-  color: var(--ink);
+/* The score, stated once, in the flow of ordinary text — not a big isolated
+   numeral in a bordered side panel. The verdict above is what matters; the
+   number is a fact within the sentence, not a dashboard tile competing with it. */
+.verdict-score-line {
+  font-size: 17px;
+  color: var(--muted);
+  margin: 14px 0 0;
   font-variant-numeric: tabular-nums;
 }
 
-.verdict-score span {
-  display: block;
-  font: 500 10px var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 10px 0 0 auto;
-  max-width: 14ch;
+.verdict .lede {
+  margin: 10px 0 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -95,7 +78,6 @@
 
 .red-line-block {
   background: var(--red-bg);
-  border-left: 4px solid var(--red);
   padding: clamp(24px, 4vw, 38px);
   margin: 34px 0;
 }
@@ -128,25 +110,32 @@
    so the reader can always tell Karl's words from generated ones.
    -------------------------------------------------------------------------- */
 
+/* Model-written passages are marked by voice, not by a coloured panel: italic
+   serif sets them apart from the sans body copy around them, and a plain
+   caption underneath says what they are. <figure>/<blockquote>/<figcaption>
+   need their default margins reset explicitly. */
 .tailored-opening,
 .tailored-scenario {
-  border-left: 2px solid var(--gold);
-  padding-left: 22px;
   margin: 34px 0;
 }
 
 .tailored-text {
-  font: 400 clamp(17px, 2vw, 21px) / 1.55 var(--serif);
+  font: 400 italic clamp(17px, 2vw, 21px) / 1.55 var(--serif);
   color: var(--ink-soft);
   margin: 0;
   max-width: 68ch;
 }
 
+.tailored-caption {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+
 .tailored-inline {
-  border-left: 2px solid var(--gold);
-  padding-left: 14px;
   margin: 12px 0 0;
   font-style: italic;
+  color: var(--ink-soft);
   max-width: 68ch;
 }
 
@@ -224,9 +213,7 @@
   break-inside: avoid;
 }
 
-.control-result.red-line {
-  border-left: 3px solid var(--red);
-}
+/* No border: the "Red line" tag inside the card's own heading already says so. */
 
 .control-result.is-gap {
   background: #fdfcf8;
@@ -369,9 +356,7 @@
   break-inside: avoid;
 }
 
-.checklist li.red-line {
-  border-left: 3px solid var(--red);
-}
+/* No border: the check-tag already reads "Point N · Red line". */
 
 .check-box {
   width: 15px;
@@ -445,11 +430,13 @@
   gap: 10px;
 }
 
+/* Plain sentences, so plain type: small-caps mono was doing "technical"
+   costume on ordinary prose ("No named board-level owner for AI") rather than
+   marking data or a measurement, which is the only case that earns it. */
 .trigger-list li {
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 8px 14px;
-  font: 500 11px var(--mono);
-  letter-spacing: 0.05em;
+  font: 500 13px var(--sans);
   color: #cfe4da;
 }
 
@@ -503,19 +490,6 @@
    -------------------------------------------------------------------------- */
 
 @media (max-width: 760px) {
-  .verdict {
-    grid-template-columns: 1fr;
-  }
-  .verdict-score {
-    text-align: left;
-    border-left: 0;
-    padding-left: 0;
-    border-top: 1px solid var(--line);
-    padding-top: 22px;
-  }
-  .verdict-score span {
-    margin-left: 0;
-  }
   .checklist li {
     grid-template-columns: 20px 1fr;
   }

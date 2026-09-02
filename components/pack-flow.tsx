@@ -97,8 +97,7 @@ export function PackFlow() {
           <span>Governance AI</span>
         </Link>
         <div className="aside-copy">
-          <p className="eyebrow">Organisation context</p>
-          <h2>Let&rsquo;s put your organisation in context.</h2>
+          <h2>A few questions about your organisation.</h2>
           <p>{WIZARD_PROMISE}</p>
         </div>
         <div className="aside-footer">
@@ -127,10 +126,10 @@ export function PackFlow() {
         </div>
 
         <div className="question">
-          <p className="question-overline">
-            {String(step).padStart(2, "0")} / {question.overline}
-          </p>
-          <h1>{question.question}</h1>
+          <h1>
+            <span className="sr-only">{question.overline}. </span>
+            {question.question}
+          </h1>
           <p className="question-help">{question.help}</p>
 
           {step === 1 && (
@@ -298,8 +297,10 @@ function AssessmentStage({
       </div>
 
       <div className="question" style={{ marginBottom: 44 }}>
-        <p className="question-overline">Part 1 / AI Minimum Standard</p>
-        <h1>Which of these can you evidence today?</h1>
+        <h1>
+          <span className="sr-only">Part 1, AI Minimum Standard. </span>
+          Which of these can you evidence today?
+        </h1>
         <p className="question-help">
           {HOW_TO_SCORE.evidenceTest} {HOW_TO_SCORE.noPartialCredit}
         </p>

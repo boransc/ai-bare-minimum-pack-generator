@@ -93,7 +93,6 @@ export function SavePack({ token, canSend = false }: SavePackProps) {
 
   return (
     <section className="save-pack no-print">
-      <p className="kicker">Save and return</p>
       <h2 className="h3">Keep this link.</h2>
       <p className="save-pack-copy">
         This link is how you come back to your pack. It works for 90 days, and

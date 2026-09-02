@@ -95,12 +95,10 @@ export default async function AdminPage() {
   return (
     <main className="admin-page">
       <header className="admin-header">
-        <div>
-          <p className="eyebrow">Admin · last {DAYS_TO_SCAN} days</p>
-          <h1 className="h2">Lead list</h1>
-        </div>
+        <h1 className="h2">Lead list</h1>
         <p className="admin-subhead">
-          Every generated pack, newest first, with the wizard answers behind it.
+          Every generated pack from the last {DAYS_TO_SCAN} days, newest first,
+          with the wizard answers behind it.
         </p>
       </header>
 

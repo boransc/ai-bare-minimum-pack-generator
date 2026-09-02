@@ -6,6 +6,7 @@ import { CONTROLS_BY_NUMBER } from "@/content/v1/controls";
 import {
   PACK_FOOTER,
   THIRTY_DAY_PLAN,
+  THIRTY_DAY_PLAN_INTRO,
   THREE_THINGS_THAT_GO_WRONG,
   THE_PATTERN,
   WHAT_THE_BARE_MINIMUM_DOES_NOT_GIVE_YOU,
@@ -60,7 +61,6 @@ export function PackResult({
       {/* Cover ------------------------------------------------------------ */}
       <section className="pack-cover">
         <div>
-          <p className="eyebrow">AI Bare Minimum Pack</p>
           <p className="cover-context">A governance starting point for</p>
           <h1 className="display">{name}</h1>
           <p className="cover-meta">
@@ -76,21 +76,16 @@ export function PackResult({
 
       {/* Verdict ---------------------------------------------------------- */}
       <section className={`verdict ${met ? "is-met" : "is-not-met"}`}>
-        <div className="verdict-main">
-          <p className="kicker">Your result</p>
-          <h2 className="h2">
-            {met ? VERDICT_COPY.met.headline : VERDICT_COPY.notMet.headline}
-          </h2>
-          <p className="lede">
-            {met ? VERDICT_COPY.met.subhead : assessment.band.whereThatLeavesYou}
-          </p>
-          {!met && <p className="lede">{assessment.band.whatToDoNext}</p>}
-        </div>
-
-        <div className="verdict-score">
-          <strong>{assessment.score}</strong>
-          <span>of 8 points evidenced</span>
-        </div>
+        <h2 className="h2">
+          {met ? VERDICT_COPY.met.headline : VERDICT_COPY.notMet.headline}
+        </h2>
+        <p className="verdict-score-line">
+          {assessment.score} of 8 points evidenced.
+        </p>
+        <p className="lede">
+          {met ? VERDICT_COPY.met.subhead : assessment.band.whereThatLeavesYou}
+        </p>
+        {!met && <p className="lede">{assessment.band.whatToDoNext}</p>}
       </section>
 
       {/* Red line --------------------------------------------------------- */}
@@ -114,7 +109,7 @@ export function PackResult({
 
       {/* Tailored opening ------------------------------------------------- */}
       <TailoredBlock
-        kicker="Your position"
+        caption="Written for your organisation."
         text={tailoring?.slots.openingContext}
         status={tailoringStatus}
       />
@@ -125,8 +120,7 @@ export function PackResult({
       {/* What to do first ------------------------------------------------- */}
       {first.length > 0 && (
         <section className="section-block">
-          <p className="kicker">What to do first</p>
-          <h2 className="h2">Start here.</h2>
+          <h2 className="h2">What to do first.</h2>
           <p className="lede">
             In the source&rsquo;s own order: any failed red line first, then the
             thirty-day plan sequence. Nothing here is reordered by context.
@@ -147,8 +141,7 @@ export function PackResult({
 
       {/* Control breakdown ------------------------------------------------ */}
       <section className="section-block">
-        <p className="kicker">The eight-point check</p>
-        <h2 className="h2">Point by point.</h2>
+        <h2 className="h2">The eight-point check, point by point.</h2>
         <div className="control-results">
           {assessment.controls.map((control) => {
             const emphasis = tailoring?.slots.controlEmphasis?.[control.number];
@@ -202,7 +195,7 @@ export function PackResult({
 
       {/* How this goes wrong ---------------------------------------------- */}
       <section className="section-block tinted-block">
-        <p className="kicker">The three things that actually go wrong</p>
+        <h2 className="h3-lead">The three things that actually go wrong.</h2>
         <div className="wrongs">
           {THREE_THINGS_THAT_GO_WRONG.map((item) => (
             <article key={item.title}>
@@ -214,7 +207,7 @@ export function PackResult({
         <p className="pattern">{THE_PATTERN}</p>
 
         <TailoredBlock
-          kicker="And in an organisation like yours"
+          caption="A plausible version of this, for an organisation like yours."
           text={tailoring?.slots.riskScenario}
           status={tailoringStatus}
           variant="scenario"
@@ -223,8 +216,8 @@ export function PackResult({
 
       {/* Thirty-day plan --------------------------------------------------- */}
       <section className="section-block">
-        <p className="kicker">Part 2 · The thirty-day plan</p>
-        <h2 className="h2">Achievable alongside a normal working month.</h2>
+        <h2 className="h2">The thirty-day plan.</h2>
+        <p className="lede">{THIRTY_DAY_PLAN_INTRO}</p>
         <div className="plan-grid">
           {THIRTY_DAY_PLAN.map((week) => {
             const relevant = checklist.filter(
@@ -249,7 +242,6 @@ export function PackResult({
 
       {/* Checklist --------------------------------------------------------- */}
       <section className="section-block">
-        <p className="kicker">Your checklist</p>
         <h2 className="h2">
           {checklist.length > 0
             ? `${checklist.length} things to close.`
@@ -264,7 +256,6 @@ export function PackResult({
 
       {/* Full Playbook ----------------------------------------------------- */}
       <section className="playbook-cta">
-        <p className="eyebrow">Beyond the minimum</p>
         <h2 className="h2">What the bare minimum does not give you.</h2>
         <p className="lede">{WHAT_THE_BARE_MINIMUM_DOES_NOT_GIVE_YOU.intro}</p>
 
@@ -293,7 +284,7 @@ export function PackResult({
 
       {/* Transparency ------------------------------------------------------ */}
       <section className="section-block transparency-note">
-        <p className="kicker">How this pack was made</p>
+        <h3 className="h3">How this pack was made.</h3>
         <p>
           The eight points, the scoring, the policy and the staff note are Karl
           George&rsquo;s work, reproduced unchanged.{" "}

@@ -31,7 +31,7 @@ describe("tailoringStatusMessage", () => {
   test("ready with at least one model-provenance slot names the model", () => {
     const withModel = result({ openingContext: "model", riskScenario: "fallback" });
     expect(tailoringStatusMessage(withModel, "ready")).toBe(
-      "A language model wrote a small number of contextual sentences, marked in the margin; it cannot alter any requirement.",
+      "A language model wrote a small number of sentences below, set in italics; it cannot alter any requirement.",
     );
   });
 

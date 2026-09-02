@@ -79,8 +79,7 @@ function NotFoundState() {
   return (
     <main className="pack">
       <section className="section-block" style={{ textAlign: "center" }}>
-        <p className="kicker">We can&rsquo;t find that pack</p>
-        <h1 className="h2">This link doesn&rsquo;t match a saved pack.</h1>
+        <h1 className="h2">We can&rsquo;t find that pack.</h1>
         <p className="lede">
           It may have been typed or copied slightly wrong, or the pack may
           simply never have existed at this address. Nothing has been deleted
@@ -101,8 +100,7 @@ function ExpiredState() {
   return (
     <main className="pack">
       <section className="section-block" style={{ textAlign: "center" }}>
-        <p className="kicker">This link has expired</p>
-        <h1 className="h2">Saved links last 90 days from when they&rsquo;re created.</h1>
+        <h1 className="h2">This link has expired.</h1>
         <p className="lede">
           Your pack itself hasn&rsquo;t been changed or removed — only this
           particular link into it has stopped working, because that&rsquo;s
