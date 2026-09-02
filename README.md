@@ -92,6 +92,12 @@ POST /api/email-link   optional, sends the link and nothing else
 /admin                 passcode-gated lead list
 ```
 
+**Finding the admin page.** There is deliberately no link to it anywhere on the
+public site — the whole product is unauthenticated and public by design, and an
+"Admin" button in the header would just invite the curious to click it. Go
+directly to `<your-domain>/admin` and sign in with the value you set as
+`APP_PASSCODE`. Bookmark it once you're in; that is the intended way back.
+
 ### The pack renders before the model runs
 
 Measured p95 on `@cf/openai/gpt-oss-120b` is around **20 seconds**. Nobody should wait that long to find out
