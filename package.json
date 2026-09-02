@@ -10,7 +10,8 @@
     "lint:fix": "eslint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "tailoring-check": "vitest run scripts/tailoring-check.test.ts"
+    "tailoring-check": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run scripts/tailoring-check.test.ts",
+    "email-check": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run scripts/email-check.test.ts"
   },
   "dependencies": {
     "next": "16.3.4",

@@ -1,0 +1,107 @@
+/**
+ * The half that cannot be proved without a mailbox.
+ *
+ * lib/email/send.test.ts proves we build the right request: right endpoint,
+ * right auth header, right payload, and — the one that matters — that the
+ * message carries the link and nothing else about the organisation.
+ *
+ * Only a real provider and a real inbox can prove the message arrives, so this
+ * sends one. It is opt-in and takes the recipient explicitly; it will never
+ * guess an address or reuse one it found lying around.
+ *
+ *   npm run email-check                                  reports configuration
+ *   EMAIL_TO=you@example.com npm run email-check         also sends
+ *
+ * A pass means the provider ACCEPTED the message. It does not mean the message
+ * reached an inbox: mail from an unauthenticated free address is routinely
+ * filed as spam. Go and look.
+ */
+
+import { describe, expect, it } from "vitest";
+import { emailProvider, sendReturnLink } from "@/lib/email/send";
+
+const recipient = process.env.EMAIL_TO;
+
+function maskAddress(value: string | undefined): string {
+  if (!value) return "unset";
+  return value.replace(/(.{2}).*(@.*)/, "$1***$2");
+}
+
+/**
+ * Always runs, so `npm run email-check` on its own answers "is this set up?"
+ * rather than skipping silently and telling you nothing.
+ */
+describe("email configuration", () => {
+  it("reports what is configured", () => {
+    const provider = emailProvider();
+
+    console.log("");
+    console.log("  provider:  ", provider ?? "NONE");
+    console.log("  from:      ", maskAddress(process.env.EMAIL_FROM));
+    console.log(
+      "  sending:   ",
+      provider
+        ? "CONFIGURED"
+        : "not configured — the page offers to take an address instead",
+    );
+    if (!recipient) {
+      console.log("");
+      console.log("  To send a real message:");
+      console.log("    EMAIL_TO=you@example.com npm run email-check");
+      console.log("");
+    }
+
+    // Reporting, not asserting. An unconfigured environment is a valid state,
+    // and the product is built to behave honestly in it.
+    expect(["brevo", "resend", null]).toContain(provider);
+  });
+});
+
+describe.skipIf(!recipient)("email delivery", () => {
+  it("sends a real return link", { timeout: 30_000 }, async () => {
+    const provider = emailProvider();
+
+    console.log("");
+    console.log("  sending to:", maskAddress(recipient));
+
+    expect(
+      provider,
+      "No provider configured. Set EMAIL_FROM and BREVO_API_KEY (or RESEND_API_KEY).",
+    ).not.toBeNull();
+
+    // Deliberately not a real token: this is a delivery test, not a pack, and
+    // nothing openable should go out in it.
+    const url = "https://example.invalid/pack/delivery-check-not-a-real-pack";
+    const result = await sendReturnLink(recipient!, url);
+
+    if (!result.ok) {
+      console.log("");
+      console.log(`  REJECTED: ${result.reason}`);
+      if ("detail" in result && result.detail) {
+        console.log(`  provider said: ${result.detail}`);
+      }
+      if (result.reason.includes("401")) {
+        console.log("  401 has three likely causes, in the order worth checking:");
+        console.log("   1. Brevo's IP allowlist is on. The message above names the");
+        console.log("      blocked address. Turn the restriction OFF rather than");
+        console.log("      adding one IP: serverless egress addresses change, so an");
+        console.log("      allowlist fixes your laptop and breaks production.");
+        console.log("   2. The key is an SMTP key, not an API v3 key. Brevo issues");
+        console.log("      both; only the v3 key works against api.brevo.com.");
+        console.log("   3. The key was revoked or belongs to another account.");
+      }
+      if (result.reason.includes("400")) {
+        console.log("  400 usually means EMAIL_FROM is not a verified sender.");
+      }
+    } else {
+      console.log("");
+      console.log("  ACCEPTED by the provider.");
+      console.log("  Now check the inbox, and the spam folder — that is where");
+      console.log("  mail from an unauthenticated free address usually lands.");
+    }
+
+    expect(result.ok, `provider rejected the message: ${JSON.stringify(result)}`).toBe(
+      true,
+    );
+  });
+});

@@ -28,7 +28,10 @@ const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const SEND_TIMEOUT_MS = 8000;
 const SUBJECT = "Your AI Bare Minimum Pack link";
 
-export type SendResult = { ok: true } | { ok: false; reason: string };
+export type SendResult =
+  | { ok: true }
+  /** `detail` is the provider's own words, for logs and the check script — never shown to a visitor. */
+  | { ok: false; reason: string; detail?: string };
 
 export type EmailProvider = "brevo" | "resend" | null;
 
@@ -148,7 +151,16 @@ export async function sendReturnLink(to: string, url: string): Promise<SendResul
         : await sendViaResend(process.env.RESEND_API_KEY!, from, to, body);
 
     if (!response.ok) {
-      return { ok: false, reason: `send-failed-${response.status}` };
+      // Carry what the provider actually said. A bare status sends you hunting
+      // for a cause the response body already names — Brevo, for instance,
+      // distinguishes an invalid key from an unverified sender in the text,
+      // and both arrive as a 401 or 400.
+      const detail = await response.text().catch(() => "");
+      return {
+        ok: false,
+        reason: `send-failed-${response.status}`,
+        detail: detail.slice(0, 300) || undefined,
+      };
     }
 
     return { ok: true };

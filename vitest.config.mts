@@ -2,6 +2,13 @@ import { defineConfig } from "vitest/config";
 
 // No React plugin or jsdom: everything under test here is pure domain logic.
 // Add @vitejs/plugin-react and environment: "jsdom" when component tests arrive.
+//
+// Deliberately NOT loading .env.local here. Doing so makes the whole suite
+// non-hermetic: lib/api/rate-limit takes the KV path when Cloudflare is
+// configured, so the same test passes or fails depending on whether the
+// developer happens to have credentials on disk, and CI disagrees with the
+// laptop. The two live checks that genuinely need credentials pass them
+// explicitly instead — see the tailoring-check and email-check scripts.
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,

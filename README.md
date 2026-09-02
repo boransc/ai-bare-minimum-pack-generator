@@ -47,6 +47,15 @@ mail sent *from* a free address is routinely filtered to spam because it cannot
 be authenticated. Good enough to demonstrate; a real deployment should send from
 `governanceai.io`, which is a DNS change on Governance AI's side.
 
+Run `npm run email-check` to see what is configured, and
+`EMAIL_TO=you@example.com npm run email-check` to send a real message and have
+the provider's own error reported back.
+
+**If Brevo returns 401**, check its IP allowlist first
+(`app.brevo.com/security/authorised_ips`). Turn the restriction *off* rather
+than adding a single address: serverless egress IPs change between invocations,
+so an allowlist works on a laptop and fails in production.
+
 `CF_VECTORIZE_INDEX` is issued but deliberately unused — see [Decisions](#decisions-and-why).
 
 ### Commands
