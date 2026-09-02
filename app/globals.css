@@ -20,6 +20,12 @@
   --mint: #dfece6;
   --sand: #e8e1d5;
   --gold: #bd8e3f;
+  /* The same gold as text fails contrast badly: #bd8e3f measures 2.71:1 on
+     paper, against a 4.5:1 floor, and every use of it is 9-13px. This darker
+     tone holds the identity and measures 4.75:1 on paper, 5.14:1 on white.
+     --gold stays for rules and borders, which are UI elements rather than
+     text and are not held to that floor. */
+  --gold-text: #8f6520;
 
   /* Red line. Used only for points 4 and 6 and the not-met verdict, so that
      seeing this colour anywhere in the product means exactly one thing. */
@@ -40,6 +46,46 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Browser surfaces.
+
+   The parts nobody draws still carry the design: the selection highlight, the
+   caret, the scrollbar, the checkbox tick. Left alone they ship the operating
+   system's blue into a page built entirely from ink, paper and forest green,
+   and that single mismatch is what makes an interface read as assembled rather
+   than made.
+   -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+  accent-color: var(--green);
+  scrollbar-color: #b9c6c0 var(--paper);
+}
+
+::selection {
+  background: var(--mint);
+  color: var(--ink);
+}
+
+/* The green ground needs the inverse, or selected text disappears into it. */
+.flow-aside ::selection,
+.trust-strip ::selection,
+.playbook-cta ::selection {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--green);
+}
+
+input,
+textarea {
+  caret-color: var(--green);
+}
+
+/* Underlines that clear the descenders instead of cutting through them. */
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
 }
 
 html {
@@ -245,9 +291,17 @@ body {
   font-size: 13px;
 }
 
-:where(a, button, input, [tabindex]):focus-visible {
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* A green ring on a green ground is no ring at all. */
+.flow-aside :where(a, button, [tabindex]):focus-visible,
+.trust-strip :where(a, button):focus-visible,
+.playbook-cta :where(a, button):focus-visible {
+  outline-color: var(--white);
 }
 
 /* --------------------------------------------------------------------------
@@ -359,7 +413,7 @@ body {
 
 .sheet-index b {
   font: 500 9px var(--mono);
-  color: var(--gold);
+  color: var(--gold-text);
   font-weight: 500;
 }
 
@@ -429,7 +483,7 @@ body {
 
 .step-number {
   font: 500 11px var(--mono);
-  color: var(--gold);
+  color: var(--gold-text);
 }
 
 .steps-grid h3 {
@@ -500,7 +554,7 @@ body {
   font: 500 10px/1.7 var(--mono);
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #86b3a2;
+  color: #9ac5b6;
 }
 
 .flow-main {
@@ -544,7 +598,7 @@ body {
   font: 500 10px var(--mono);
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--gold-text);
   margin: 0 0 20px;
 }
 
@@ -589,7 +643,9 @@ body {
 
 .choice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  /* min(230px, 100%) rather than a bare 230px: a hard pixel floor in auto-fit
+     is itself an overflow source once the container is narrower than the floor. */
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
   gap: 10px;
   max-width: 760px;
 }
@@ -689,7 +745,7 @@ body {
 
 .control-number {
   font: 500 13px var(--mono);
-  color: var(--gold);
+  color: var(--gold-text);
   padding-top: 5px;
 }
 
@@ -815,13 +871,18 @@ body {
 
 @media (max-width: 1080px) {
   .hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .hero-art {
     display: none;
   }
   .flow {
-    grid-template-columns: 1fr;
+    /* minmax(0, 1fr), never a bare 1fr. A bare 1fr resolves to
+       minmax(auto, 1fr), so the track refuses to shrink below its content's
+       min-content width and the whole column overflows the viewport — which is
+       exactly what happened here: .flow measured 375px while .flow-main
+       measured 758px and the option grid ran off the side of the phone. */
+    grid-template-columns: minmax(0, 1fr);
   }
   .flow-aside {
     position: static;
@@ -844,6 +905,47 @@ body {
   .trust-strip div {
     border-left: 0;
     padding-left: 0;
+  }
+}
+
+/* Touch targets. Anything tappable needs ~44px of height on a phone, and the
+   inline text links were 18-27px. Padding rather than a min-height on the
+   inline ones, so they keep sitting on the text baseline. */
+@media (pointer: coarse), (max-width: 1080px) {
+  .brand,
+  .site-header .text-button,
+  .flow-top .text-button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .text-button {
+    /* min-height rather than padding alone: 12px of padding on an 18px line
+       lands at 42px, which is close enough to look right and still miss. */
+    min-height: 44px;
+    padding: 12px 0;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* .button.small lands at 40px and inputs at 43px, both just under the
+     threshold where a thumb stops missing. */
+  .button.small {
+    min-height: 44px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  .text-input {
+    min-height: 44px;
+  }
+
+  /* A 16px native checkbox is a poor target. The label carries the rest of the
+     hit area, but the box itself should still be findable. */
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
   }
 }
 

@@ -114,3 +114,24 @@
     display: none !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Touch target for the consent row.
+
+   WCAG target size counts the whole activation area, not the painted box, and
+   a checkbox's label is part of that area. The box itself stays visually
+   modest and matches the checklist's; the label carries the height.
+   -------------------------------------------------------------------------- */
+
+@media (pointer: coarse), (max-width: 1080px) {
+  .save-pack-checkbox-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .save-pack-checkbox-row label {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}

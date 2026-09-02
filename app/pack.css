@@ -192,7 +192,7 @@
   font: 500 9px var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--gold-text);
 }
 
 .first-actions strong {
@@ -265,7 +265,7 @@
 }
 
 .control-result.is-gap .control-status {
-  color: var(--gold);
+  color: var(--gold-text);
   border-color: #e2cfa8;
   background: #faf3e6;
 }
@@ -293,7 +293,7 @@
 
 .wrongs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 30px;
   margin-top: 30px;
 }
@@ -320,7 +320,7 @@
 
 .plan-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);
@@ -455,7 +455,7 @@
 
 .playbook-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
   gap: 28px;
   margin: 40px 0 0;
 }
@@ -572,5 +572,23 @@
 
   .red-line-block {
     break-inside: avoid;
+  }
+
+  /* The source tells people to print the checklist and work through it, so the
+     boxes have to survive onto paper. Browsers print native checkboxes
+     inconsistently — sometimes as nothing at all — so draw them instead. */
+  .checklist input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12pt;
+    height: 12pt;
+    border: 0.75pt solid #444;
+    background: none;
+  }
+
+  /* A printed pack is a board document; it should not carry a spinner or a
+     half-loaded state. */
+  .tailoring-placeholder {
+    display: none;
   }
 }
