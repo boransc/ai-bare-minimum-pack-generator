@@ -14,6 +14,9 @@ import { VERDICT_COPY } from "@/content/v1/scoring";
 import { scoreContradictsVerdict } from "@/lib/domain/assessment";
 import { whatToDoFirst } from "@/lib/domain/checklist";
 import { displayName, type GeneratedPack } from "@/lib/domain/pack";
+import { useTailoring } from "./use-tailoring";
+import { TailoredBlock, TailoringStatusNote } from "./tailored-block";
+import { SavePack } from "./save-pack";
 import type { ChecklistItem } from "@/lib/domain/types";
 
 interface PackResultProps {
@@ -28,7 +31,12 @@ interface PackResultProps {
 }
 
 export function PackResult({ pack, token, checklistState }: PackResultProps) {
-  const { assessment, checklist, tailoring, playbookTriggers } = pack;
+  const { assessment, checklist, playbookTriggers } = pack;
+
+  // Tailoring is not part of the first paint. The model takes seconds, and the
+  // pack is complete and correct without it, so it arrives afterwards and slots
+  // in. If it never arrives, nothing is missing — only less personal.
+  const { tailoring, status: tailoringStatus } = useTailoring(pack);
   const met = assessment.verdict === "met";
   const name = displayName(pack);
   const first = whatToDoFirst(checklist);
@@ -98,12 +106,14 @@ export function PackResult({ pack, token, checklistState }: PackResultProps) {
       )}
 
       {/* Tailored opening ------------------------------------------------- */}
-      {tailoring?.slots.openingContext && (
-        <section className="tailored-opening">
-          <p className="kicker">Your position</p>
-          <p className="tailored-text">{tailoring.slots.openingContext}</p>
-        </section>
-      )}
+      <TailoredBlock
+        kicker="Your position"
+        text={tailoring?.slots.openingContext}
+        status={tailoringStatus}
+      />
+
+      {/* Save and return --------------------------------------------------- */}
+      {token && <SavePack token={token} />}
 
       {/* What to do first ------------------------------------------------- */}
       {first.length > 0 && (
@@ -196,12 +206,12 @@ export function PackResult({ pack, token, checklistState }: PackResultProps) {
         </div>
         <p className="pattern">{THE_PATTERN}</p>
 
-        {tailoring?.slots.riskScenario && (
-          <div className="tailored-scenario">
-            <p className="kicker">And in an organisation like yours</p>
-            <p className="tailored-text">{tailoring.slots.riskScenario}</p>
-          </div>
-        )}
+        <TailoredBlock
+          kicker="And in an organisation like yours"
+          text={tailoring?.slots.riskScenario}
+          status={tailoringStatus}
+          variant="scenario"
+        />
       </section>
 
       {/* Thirty-day plan --------------------------------------------------- */}
@@ -280,9 +290,7 @@ export function PackResult({ pack, token, checklistState }: PackResultProps) {
         <p>
           The eight points, the scoring, the policy and the staff note are Karl
           George&rsquo;s work, reproduced unchanged.{" "}
-          {tailoring
-            ? "A language model wrote a small number of contextual sentences, marked in the margin, and it cannot alter any requirement."
-            : "No AI-written text appears in this pack."}{" "}
+          <TailoringStatusNote tailoring={tailoring} status={tailoringStatus} />{" "}
           The result reflects what you told us about your own organisation; nothing
           here has been independently verified.
         </p>

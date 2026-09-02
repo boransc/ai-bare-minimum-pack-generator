@@ -18,17 +18,43 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ new?: string }>;
 }
 
-export default async function SavedPackPage({ params }: PageProps) {
+/**
+ * KV is eventually consistent, so a pack saved a moment ago may not be readable
+ * on the very next request. That only matters once: immediately after
+ * generation, when the wizard redirects here.
+ *
+ * The redirect carries ?new=1, and only then do we retry. A cold link that
+ * genuinely does not exist still fails fast, which is what someone who mistyped
+ * a URL deserves.
+ */
+const FIRST_READ_ATTEMPTS = 4;
+const FIRST_READ_DELAY_MS = 500;
+
+async function loadWithRetry(token: string, isFresh: boolean) {
+  const attempts = isFresh ? FIRST_READ_ATTEMPTS : 1;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const result = await loadPack(token);
+    if (result.status !== "not-found" || attempt === attempts) return result;
+    await new Promise((resolve) => setTimeout(resolve, FIRST_READ_DELAY_MS));
+  }
+
+  return loadPack(token);
+}
+
+export default async function SavedPackPage({ params, searchParams }: PageProps) {
   const { token } = await params;
+  const { new: isNew } = await searchParams;
 
   // Reject anything that doesn't even look like a token before it reaches KV.
   if (!isValidToken(token)) {
     return <NotFoundState />;
   }
 
-  const result = await loadPack(token);
+  const result = await loadWithRetry(token, isNew === "1");
 
   if (result.status === "not-found") {
     return <NotFoundState />;

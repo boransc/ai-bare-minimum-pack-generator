@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ORG_NAME_FIELD,
@@ -15,10 +16,8 @@ import type {
   WizardAnswers,
   WizardQuestionId,
 } from "@/lib/domain/flow-types";
-import type { GeneratedPack } from "@/lib/domain/pack";
-import { PackResult } from "./pack-result";
 
-type Stage = "wizard" | "assessment" | "generating" | "result";
+type Stage = "wizard" | "assessment" | "generating";
 
 /** Partial while the user is filling it in; validated into WizardAnswers on submit. */
 type Draft = Partial<Record<WizardQuestionId, string | string[]>>;
@@ -30,7 +29,6 @@ export function PackFlow() {
   const [draft, setDraft] = useState<Draft>({});
   const [answers, setAnswers] = useState<AssessmentAnswers>({});
   const [error, setError] = useState("");
-  const [pack, setPack] = useState<GeneratedPack | null>(null);
 
   const question = WIZARD_QUESTIONS[step - 1];
 
@@ -78,10 +76,6 @@ export function PackFlow() {
     setStep((s) => Math.max(1, s - 1));
   }
 
-  if (stage === "result" && pack) {
-    return <PackResult pack={pack} />;
-  }
-
   if (stage === "assessment" || stage === "generating") {
     return (
       <AssessmentStage
@@ -90,11 +84,6 @@ export function PackFlow() {
         busy={stage === "generating"}
         onBack={() => setStage("wizard")}
         wizard={{ orgName, draft }}
-        onGenerated={(generated) => {
-          setPack(generated);
-          setStage("result");
-          window.scrollTo({ top: 0 });
-        }}
         onBusy={(busy) => setStage(busy ? "generating" : "assessment")}
       />
     );
@@ -215,7 +204,6 @@ function AssessmentStage({
   busy,
   onBack,
   wizard,
-  onGenerated,
   onBusy,
 }: {
   answers: AssessmentAnswers;
@@ -223,9 +211,9 @@ function AssessmentStage({
   busy: boolean;
   onBack: () => void;
   wizard: { orgName: string; draft: Draft };
-  onGenerated: (pack: GeneratedPack) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [missing, setMissing] = useState<string[]>([]);
   const firstMissingRef = useRef<HTMLDivElement | null>(null);
@@ -283,7 +271,13 @@ function AssessmentStage({
         const body = await response.json().catch(() => null);
         throw new Error(body?.message ?? "We could not generate your pack.");
       }
-      onGenerated((await response.json()) as GeneratedPack);
+
+      const { token } = (await response.json()) as { token: string };
+
+      // Straight to the personal link. There is only one result surface, so
+      // what the user sees now is exactly what they see when they come back.
+      // ?new=1 tells that page to allow for KV write propagation on first read.
+      router.push(`/pack/${token}?new=1`);
     } catch (e) {
       onBusy(false);
       setError(

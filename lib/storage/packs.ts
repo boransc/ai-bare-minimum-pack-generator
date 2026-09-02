@@ -38,6 +38,15 @@ export interface StoredPack extends GeneratedPack {
   /** Sub-statement id (or "find-out:<field>") -> ticked. */
   checklistState: Record<string, boolean>;
   checklistUpdatedAt: string | null;
+  /** Optional email capture. Absent until the visitor asks for their link. */
+  emailConsent: EmailConsent | null;
+}
+
+export interface EmailConsent {
+  email: string;
+  marketingOptIn: boolean;
+  /** ISO 8601, when consent was recorded. */
+  recordedAt: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,6 +69,7 @@ export async function savePack(
     accessExpiresAt: computeAccessExpiresAt(pack.createdAt),
     checklistState: {},
     checklistUpdatedAt: null,
+    emailConsent: null,
   };
 
   await putJson(kvKeys.pack(token), stored, {
@@ -107,6 +117,47 @@ export async function saveChecklistState(
     ...existing,
     checklistState: { ...existing.checklistState, [itemId]: done },
     checklistUpdatedAt: now.toISOString(),
+  };
+
+  await putJson(kvKeys.pack(token), updated, {
+    expirationTtlSeconds: ttlSecondsRemaining(existing.createdAt, now),
+  });
+
+  return { status: "ok", pack: updated };
+}
+
+export type SaveEmailConsentResult =
+  | { status: "ok"; pack: StoredPack }
+  | { status: "not-found" }
+  | { status: "expired" };
+
+/**
+ * Read-modify-write of the single blob, recording that a visitor asked for
+ * their link by email (and whether they opted into marketing). Same shape
+ * as `saveChecklistState`: the TTL is recomputed from the record's original
+ * `createdAt`, never from `now`, so asking for the link does not extend the
+ * 12-month retention window.
+ */
+export async function saveEmailConsent(
+  token: string,
+  email: string,
+  marketingOptIn: boolean,
+  now = new Date(),
+): Promise<SaveEmailConsentResult> {
+  const existing = await getJson<StoredPack>(kvKeys.pack(token));
+  if (!existing) return { status: "not-found" };
+
+  if (isAccessExpired(existing.accessExpiresAt, now)) {
+    return { status: "expired" };
+  }
+
+  const updated: StoredPack = {
+    ...existing,
+    emailConsent: {
+      email,
+      marketingOptIn,
+      recordedAt: now.toISOString(),
+    },
   };
 
   await putJson(kvKeys.pack(token), updated, {

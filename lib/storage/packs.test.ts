@@ -106,4 +106,17 @@ describe("ttlSecondsRemaining", () => {
     // Both TTLs should point at (very nearly) the same absolute deletion instant.
     expect(Math.abs(day30DeletionTime - day0DeletionTime)).toBeLessThan(2000);
   });
+
+  it("an email-consent write at day 60 owes the same deadline as one at day 0 (saveEmailConsent reuses this arithmetic verbatim)", () => {
+    const createdAt = "2026-01-01T00:00:00.000Z";
+    const day0Ttl = ttlSecondsRemaining(createdAt, new Date(createdAt));
+    const day60Now = new Date(new Date(createdAt).getTime() + 60 * 24 * 60 * 60 * 1000);
+    const day60Ttl = ttlSecondsRemaining(createdAt, day60Now);
+    const day60DeletionTime = day60Now.getTime() + day60Ttl * 1000;
+    const day0DeletionTime = new Date(createdAt).getTime() + day0Ttl * 1000;
+    // Asking for an emailed link must not push the 12-month deletion out any
+    // further than it already was -- same invariant saveEmailConsent relies
+    // on when it recomputes the TTL from the pack's original createdAt.
+    expect(Math.abs(day60DeletionTime - day0DeletionTime)).toBeLessThan(2000);
+  });
 });

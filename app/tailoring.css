@@ -1,0 +1,45 @@
+/**
+ * The loading placeholder shown while /api/tailor is still working. Kept
+ * apart from pack.css because this is the one piece of the pack with a
+ * transient state — everything else is a still frame.
+ *
+ * The gold left-margin rule is how model-written text is marked everywhere
+ * else in the pack, so the placeholder borrows it too: it previews where the
+ * tailored sentence will land rather than looking like a distinct widget.
+ */
+
+.tailoring-placeholder {
+  border-left: 2px solid var(--gold);
+  padding-left: 22px;
+  margin: 34px 0;
+  opacity: 0.7;
+}
+
+.tailoring-placeholder-text {
+  font: 400 clamp(15px, 1.6vw, 17px) / 1.55 var(--serif);
+  color: var(--muted);
+  margin: 0;
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tailoring-placeholder {
+    animation: tailoring-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes tailoring-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@media print {
+  .tailoring-placeholder {
+    display: none;
+  }
+}
