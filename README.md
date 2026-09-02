@@ -29,8 +29,23 @@ Put these in `.env.local`, and the same values in the Vercel project settings.
 | `CF_KV_NAMESPACE_ID` | yes | KV namespace for packs, rate limits and the tailoring cache |
 | `APP_PASSCODE` | for `/admin` | You choose this. Unset means `/admin` refuses everything rather than opening. |
 | `TAILORING_ENABLED` | no | Set to `false` to serve deterministic packs only. No deploy needed. |
-| `RESEND_API_KEY` | no | Turns on emailing the return link |
-| `EMAIL_FROM` | no | Sender address for that email |
+| `EMAIL_FROM` | no | Verified sender address. Required for any email sending. |
+| `BREVO_API_KEY` | no | Turns on emailing the return link. Preferred — verifies a single address, so no domain needed. |
+| `RESEND_API_KEY` | no | Alternative sender. Needs a verified sending *domain*. |
+
+**On email.** Sending is optional and off until credentials exist; the page
+detects this on the server and never offers to send what it cannot send — it
+takes the address for Governance AI instead and says so.
+
+[Resend](https://resend.com) needs a verified sending domain, which means DNS
+records on a domain you own. [Brevo](https://developers.brevo.com/reference/sendtransacemail)
+verifies a single sender *address* on its free tier (300/day), so an ordinary
+mailbox works and nothing has to be bought — which is why it is the default
+adapter. The trade-off is honest to state: since the
+[2024 Gmail and Yahoo bulk sender rules](https://help.brevo.com/hc/en-us/articles/14925263522578-Comply-with-Gmail-Yahoo-and-Microsoft-s-requirements-for-email-senders),
+mail sent *from* a free address is routinely filtered to spam because it cannot
+be authenticated. Good enough to demonstrate; a real deployment should send from
+`governanceai.io`, which is a DNS change on Governance AI's side.
 
 `CF_VECTORIZE_INDEX` is issued but deliberately unused — see [Decisions](#decisions-and-why).
 

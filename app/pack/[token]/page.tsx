@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PackResult } from "@/components/pack-result";
 import { isValidToken } from "@/lib/storage/token";
 import { loadPack } from "@/lib/storage/packs";
+import { emailSendingConfigured } from "@/lib/email/send";
 
 // The token is the credential. It must never end up somewhere that leaks it
 // sideways: not in a title, not in analytics, not to a search engine.
@@ -64,7 +65,14 @@ export default async function SavedPackPage({ params, searchParams }: PageProps)
     return <ExpiredState />;
   }
 
-  return <PackResult pack={result.pack} token={token} checklistState={result.pack.checklistState} />;
+  return (
+    <PackResult
+      pack={result.pack}
+      token={token}
+      checklistState={result.pack.checklistState}
+      canSendEmail={emailSendingConfigured()}
+    />
+  );
 }
 
 function NotFoundState() {

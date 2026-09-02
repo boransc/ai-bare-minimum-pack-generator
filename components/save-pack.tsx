@@ -3,6 +3,12 @@
 import { useId, useState } from "react";
 
 interface SavePackProps {
+  /**
+   * Whether mail can actually be delivered. When false the form still takes an
+   * address, but it never offers to send: promising a delivery and then
+   * admitting we cannot make it is worse than not offering at all.
+   */
+  canSend?: boolean;
   token: string;
 }
 
@@ -21,7 +27,7 @@ type SendState =
  * verdict, or the gaps, because this is a record of an organisation's own
  * honest self-assessed failures and email is not the place for that.
  */
-export function SavePack({ token }: SavePackProps) {
+export function SavePack({ token, canSend = false }: SavePackProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [email, setEmail] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(false);
@@ -111,8 +117,18 @@ export function SavePack({ token }: SavePackProps) {
 
       <form className="save-pack-form" onSubmit={handleSubmit}>
         <p className="save-pack-copy save-pack-email-intro">
-          Prefer it by email? We&rsquo;ll only ever send you this link — never
-          your score, your answers, or anything else from the pack.
+          {canSend ? (
+            <>
+              Prefer it by email? We&rsquo;ll only ever send you this link —
+              never your score, your answers, or anything else from the pack.
+            </>
+          ) : (
+            <>
+              You can also leave your address for Governance AI. We are not set
+              up to email the link automatically yet, so copy it above to be
+              sure of getting back to your pack.
+            </>
+          )}
         </p>
 
         <div className="save-pack-field">
@@ -150,21 +166,28 @@ export function SavePack({ token }: SavePackProps) {
         <p className="save-pack-copy save-pack-honesty">
           Governance AI can see when a pack is completed and the answers and
           score behind it — that is how we find sales leads. Your email
-          address, if you give it, is stored to send you this link and is
-          used for marketing only if you tick the box above.
+          address, if you give it, is stored{" "}
+          {canSend ? "to send you this link" : "so Governance AI can reach you"}{" "}
+          and is used for marketing only if you tick the box above.
         </p>
 
         <div className="save-pack-actions">
           <button type="submit" className="button primary small" disabled={sending}>
-            {sending ? "Sending…" : "Email me my link"}
+            {sending
+              ? canSend
+                ? "Sending…"
+                : "Saving…"
+              : canSend
+                ? "Email me my link"
+                : "Leave my address"}
           </button>
         </div>
 
         <p className="save-pack-status" role="status" aria-live="polite">
           {sendState.kind === "sent" &&
-            "Sent. Check your inbox for the link (and your spam folder, just in case)."}
+            "Sent. Check your inbox for the link, and your spam folder just in case."}
           {sendState.kind === "not-configured" &&
-            "We've noted your address, but sending isn't switched on yet — please copy the link above instead."}
+            "Thank you — your address is saved. Copy the link above to get back to your pack."}
           {sendState.kind === "error" && (
             <span className="field-error">{sendState.message}</span>
           )}

@@ -28,9 +28,16 @@ interface PackResultProps {
    */
   token?: string;
   checklistState?: Record<string, boolean>;
+  /** Whether mail can actually be delivered. Decided on the server. */
+  canSendEmail?: boolean;
 }
 
-export function PackResult({ pack, token, checklistState }: PackResultProps) {
+export function PackResult({
+  pack,
+  token,
+  checklistState,
+  canSendEmail = false,
+}: PackResultProps) {
   const { assessment, checklist, playbookTriggers } = pack;
 
   // Tailoring is not part of the first paint. The model takes seconds, and the
@@ -113,7 +120,7 @@ export function PackResult({ pack, token, checklistState }: PackResultProps) {
       />
 
       {/* Save and return --------------------------------------------------- */}
-      {token && <SavePack token={token} />}
+      {token && <SavePack token={token} canSend={canSendEmail} />}
 
       {/* What to do first ------------------------------------------------- */}
       {first.length > 0 && (
@@ -319,6 +326,8 @@ function Checklist({
   checklist: ChecklistItem[];
   token?: string;
   checklistState?: Record<string, boolean>;
+  /** Whether mail can actually be delivered. Decided on the server. */
+  canSendEmail?: boolean;
 }) {
   const [state, setState] = useState<Record<string, boolean>>(checklistState ?? {});
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
