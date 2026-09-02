@@ -17,9 +17,12 @@
 
 const ACCOUNT = process.env.CF_ACCOUNT_ID;
 const TOKEN = process.env.CF_API_TOKEN;
-const MODEL = process.env.CF_MODEL ?? '@cf/meta/llama-3.1-8b-instruct';
-const RUNS = Number(process.env.RUNS ?? 3);
-const TIMEOUT_MS = 15000;
+// Model named in the brief. Override with CF_MODEL to compare candidates.
+const MODEL = process.env.CF_MODEL ?? '@cf/openai/gpt-oss-120b';
+// One run per case by default: five calls is enough to see whether the contract
+// holds, and model budget is not ours to burn. Raise RUNS to measure variance.
+const RUNS = Number(process.env.RUNS ?? 1);
+const TIMEOUT_MS = 25000;
 
 if (!ACCOUNT || !TOKEN) {
   console.error('Set CF_ACCOUNT_ID and CF_API_TOKEN.');
@@ -109,6 +112,17 @@ const CASES = [
 // ---------------------------------------------------------------------------
 const CAPS = { openingContext: 350, riskScenario: 600, controlEmphasis: 200 };
 
+/** Sent as response_format.json_schema. Not every model honours it; we parse defensively regardless. */
+const SLOT_SCHEMA = {
+  type: 'object',
+  properties: {
+    openingContext: { type: 'string' },
+    riskScenario: { type: 'string' },
+    controlEmphasis: { type: 'object', additionalProperties: { type: 'string' } },
+  },
+  required: ['openingContext', 'riskScenario', 'controlEmphasis'],
+};
+
 const BANNED_PATTERNS = [
   [/\b(EU AI Act|AI Act|GDPR|UK GDPR|ISO\s?\/?\s?IEC?\s?42001|ISO 42001|Article\s+\d+|Data Protection Act|Equality Act|Consumer Standards|Housing Ombudsman)\b/i, 'named law/standard'],
   [/\b(FCA|ICO|Information Commissioner|Ofsted|CQC|SRA|FRC|Regulator of Social Housing|Charity Commission|Ofcom|PRA)\b/i, 'named regulator'],
@@ -147,6 +161,22 @@ function buildPrompt(c) {
   ];
 }
 
+/**
+ * Workers AI does not have one reply envelope.
+ *
+ * @cf/openai/gpt-oss-120b answers OpenAI-style, with result.choices[].message.content.
+ * Llama-family models answer with result.response. Read both, or a working model
+ * looks like a transport failure.
+ */
+function readReply(body) {
+  const r = body?.result;
+  if (typeof r?.response === 'string') return r.response;
+  if (typeof r?.output_text === 'string') return r.output_text;
+  const choice = r?.choices?.[0]?.message?.content;
+  if (typeof choice === 'string') return choice;
+  return null;
+}
+
 async function callModel(messages) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
@@ -156,15 +186,25 @@ async function callModel(messages) {
       `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/ai/run/${MODEL}`,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, max_tokens: 700, temperature: 0.4 }),
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          'Content-Type': 'application/json',
+          // Same endpoint, same body. The gateway gives logging and caching.
+          'cf-aig-gateway-id': 'default',
+        },
+        body: JSON.stringify({
+          messages,
+          max_tokens: 900,
+          temperature: 0.3,
+          response_format: { type: 'json_schema', json_schema: SLOT_SCHEMA },
+        }),
         signal: ac.signal,
       }
     );
     const ms = Date.now() - started;
     const body = await res.json().catch(() => null);
     if (!res.ok) return { ok: false, ms, error: `HTTP ${res.status}: ${JSON.stringify(body).slice(0, 300)}` };
-    const text = body?.result?.response ?? body?.result?.output_text ?? null;
+    const text = readReply(body);
     if (typeof text !== 'string') return { ok: false, ms, error: `unexpected envelope: ${JSON.stringify(body).slice(0, 300)}` };
     return { ok: true, ms, text };
   } catch (e) {
