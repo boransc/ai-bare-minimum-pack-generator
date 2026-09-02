@@ -41,6 +41,23 @@ export interface StoredPack extends GeneratedPack {
   checklistUpdatedAt: string | null;
   /** Optional email capture. Absent until the visitor asks for their link. */
   emailConsent: EmailConsent | null;
+  /**
+   * The organisation's own answers to the bracketed fields in Parts 3 and 4 —
+   * their AI lead, where the approved tools list lives, and so on.
+   *
+   * Two rules ride on this field, both load-bearing:
+   *
+   * 1. It is NEVER sent to the model. Every value here is free text typed by a
+   *    visitor, and free text has been kept out of the tailoring prompt since
+   *    the start — that is what makes the injection defence hold. Stored and
+   *    rendered, never prompted.
+   * 2. It is NEVER copied into the lead index. This is the organisation
+   *    drafting its own policy, not information it offered Governance AI to be
+   *    qualified on. Sales sees that a policy is being filled in and how far;
+   *    it does not see the names of their staff.
+   */
+  documentFields: Record<string, string>;
+  documentFieldsUpdatedAt: string | null;
 }
 
 export interface EmailConsent {
@@ -71,6 +88,8 @@ export async function savePack(
     checklistState: {},
     checklistUpdatedAt: null,
     emailConsent: null,
+    documentFields: {},
+    documentFieldsUpdatedAt: null,
   };
 
   await putJson(kvKeys.pack(token), stored, {
@@ -118,6 +137,53 @@ export async function saveChecklistState(
     ...existing,
     checklistState: { ...existing.checklistState, [itemId]: done },
     checklistUpdatedAt: now.toISOString(),
+  };
+
+  await putJson(kvKeys.pack(token), updated, {
+    expirationTtlSeconds: ttlSecondsRemaining(existing.createdAt, now),
+  });
+
+  return { status: "ok", pack: updated };
+}
+
+export type SaveDocumentFieldResult =
+  | { status: "ok"; pack: StoredPack }
+  | { status: "not-found" }
+  | { status: "expired" };
+
+/**
+ * Record one bracketed field from Part 3 or Part 4.
+ *
+ * Same read-modify-write shape as `saveChecklistState`, and the same TTL rule:
+ * recomputed from the record's original `createdAt`, never from `now`, so
+ * drafting a policy across several sessions does not quietly extend the
+ * 12-month retention window.
+ *
+ * An empty value deletes the field rather than storing "", so a cleared box
+ * goes back to showing its bracket and prints as a blank line to write on.
+ */
+export async function saveDocumentField(
+  token: string,
+  fieldId: string,
+  value: string,
+  now = new Date(),
+): Promise<SaveDocumentFieldResult> {
+  const existing = await getJson<StoredPack>(kvKeys.pack(token));
+  if (!existing) return { status: "not-found" };
+
+  if (isAccessExpired(existing.accessExpiresAt, now)) {
+    return { status: "expired" };
+  }
+
+  const fields = { ...(existing.documentFields ?? {}) };
+  const trimmed = value.trim();
+  if (trimmed.length === 0) delete fields[fieldId];
+  else fields[fieldId] = trimmed;
+
+  const updated: StoredPack = {
+    ...existing,
+    documentFields: fields,
+    documentFieldsUpdatedAt: now.toISOString(),
   };
 
   await putJson(kvKeys.pack(token), updated, {

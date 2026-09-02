@@ -320,6 +320,15 @@ export function PackResult({
           answers and score behind it. Saying so plainly seemed better than
           leaving you to assume the assessment was private.
         </p>
+        {token && (
+          <p>
+            Anything you type into the policy and the staff note is saved with
+            this pack so you can come back to it, and is deleted with the pack
+            after twelve months. Those entries are your document, not part of
+            what Governance AI reviews — they are never used to tailor anything
+            and never appear in any list of who completed a pack.
+          </p>
+        )}
         <p>{PACK_FOOTER.disclaimer}</p>
       </section>
 
