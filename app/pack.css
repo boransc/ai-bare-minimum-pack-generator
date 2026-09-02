@@ -417,10 +417,6 @@
   color: #fff;
 }
 
-.playbook-cta .eyebrow {
-  color: #9ac5b6;
-}
-
 .trigger-list {
   list-style: none;
   margin: 26px 0 0;
@@ -528,8 +524,7 @@
   }
 
   .playbook-grid p,
-  .playbook-outro,
-  .playbook-cta .eyebrow {
+  .playbook-outro {
     color: var(--muted);
   }
 
@@ -538,10 +533,23 @@
     color: var(--ink);
   }
 
-  .section-block,
+  /* .section-block is a whole section wrapper — "the eight-point check" alone
+     can hold eight full cards, and the checklist up to nineteen rows, easily
+     several pages tall. break-inside: avoid on a box that size does not mean
+     "paginate me cleanly" — it means "never split me," and a browser asked to
+     never split something taller than a page clips or blanks it instead of
+     printing it. That was the actual cause of print looking broken, not page
+     size. Protection belongs on the small, genuinely atomic pieces inside each
+     section — .control-result and .checklist li already carry it below — not
+     on the section that contains all of them.
+     .verdict stays here: it is one heading and a couple of short lines, never
+     more than a page tall, so avoiding a split costs nothing and reads better. */
+  .section-block {
+    padding: 22pt 0;
+  }
+
   .verdict {
     break-inside: avoid;
-    padding: 22pt 0;
   }
 
   .red-line-block {

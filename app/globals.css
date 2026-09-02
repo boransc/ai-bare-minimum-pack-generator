@@ -544,10 +544,6 @@ body {
   max-width: 34ch;
 }
 
-.flow-aside .eyebrow {
-  color: #9ac5b6;
-}
-
 .aside-footer {
   font: 500 10px/1.7 var(--mono);
   letter-spacing: 0.09em;
