@@ -162,10 +162,12 @@ export function SavePack({ token, canSend = false }: SavePackProps) {
           </label>
         </div>
 
+        {/* One sentence, about the address and nothing else. What Governance AI
+            can see of the pack itself is disclosed in "How this pack was made",
+            next to the rest of the provenance — the answers and score are
+            collected at the wizard, not here, so that is where it belongs. */}
         <p className="save-pack-copy save-pack-honesty">
-          Governance AI can see when a pack is completed and the answers and
-          score behind it — that is how we find sales leads. Your email
-          address, if you give it, is stored{" "}
+          Your address is stored{" "}
           {canSend ? "to send you this link" : "so Governance AI can reach you"}{" "}
           and is used for marketing only if you tick the box above.
         </p>

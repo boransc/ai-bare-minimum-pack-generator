@@ -292,6 +292,11 @@ export function PackResult({
           The result reflects what you told us about your own organisation; nothing
           here has been independently verified.
         </p>
+        <p>
+          Governance AI can see that this pack was completed, along with the
+          answers and score behind it. Saying so plainly seemed better than
+          leaving you to assume the assessment was private.
+        </p>
         <p>{PACK_FOOTER.disclaimer}</p>
       </section>
 

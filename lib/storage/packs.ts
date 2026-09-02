@@ -22,6 +22,7 @@
 import "server-only";
 import { getJson, putJson, kvKeys, KvError } from "@/lib/cloudflare/kv";
 import type { GeneratedPack } from "@/lib/domain/pack";
+import { WIZARD_QUESTIONS } from "@/content/v1/wizard";
 import { computeAccessExpiresAt, isAccessExpired, ttlSecondsRemaining } from "./packs-pure";
 
 export {
@@ -181,9 +182,22 @@ export interface LeadSummary {
   verdict: string;
   redLineFailures: number[];
   playbookTriggers: string[];
+  /**
+   * The remaining six wizard answers -- the whole reason the lead list exists
+   * ("this is the lead list, and it's what makes the business case for your
+   * project undeniable"). Optional because lead rows written before these
+   * fields existed are still sitting in KV with the old shape; a missing
+   * field here means "not recorded", not "empty string" or "false".
+   */
+  currentAiUse?: string;
+  aiUseTypes?: string[];
+  sensitiveData?: string;
+  regulated?: string;
+  consequentialDecisions?: string;
+  boardOwner?: string;
 }
 
-function toLeadSummary(pack: GeneratedPack, token: string): LeadSummary {
+export function toLeadSummary(pack: GeneratedPack, token: string): LeadSummary {
   return {
     token,
     createdAt: pack.createdAt,
@@ -196,7 +210,51 @@ function toLeadSummary(pack: GeneratedPack, token: string): LeadSummary {
     playbookTriggers: (
       ["noBoardOwner", "consequentialDecisions", "noPolicy"] as const
     ).filter((key) => pack.playbookTriggers[key]),
+    currentAiUse: pack.wizard.currentAiUse,
+    aiUseTypes: pack.wizard.aiUseTypes,
+    sensitiveData: pack.wizard.sensitiveData,
+    regulated: pack.wizard.regulated,
+    consequentialDecisions: pack.wizard.consequentialDecisions,
+    boardOwner: pack.wizard.boardOwner,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Wizard-answer labels for the admin view.
+//
+// `WIZARD_QUESTIONS` is the single source of truth for the human-readable
+// label behind every enum value (sector, size, and the rest). Duplicating
+// that table here would drift the moment content/v1/wizard.ts changes a
+// label or adds an option, so we build the lookup from it instead.
+// ---------------------------------------------------------------------------
+
+export const NOT_RECORDED = "Not recorded";
+
+type AnswerField = (typeof WIZARD_QUESTIONS)[number]["id"];
+
+const ANSWER_LABELS: Record<string, Record<string, string>> = Object.fromEntries(
+  WIZARD_QUESTIONS.map((q) => [q.id, Object.fromEntries(q.options.map((o) => [o.value, o.label]))]),
+);
+
+/**
+ * Single-select wizard answer -> its label.
+ *
+ * Older lead rows lack these fields entirely (`undefined`), and a value that
+ * matches no known option -- a hand-edited row, or a content change that
+ * dropped an option -- must not leak its raw enum string (e.g. "dont-know")
+ * into the admin UI. Both degrade to `NOT_RECORDED`.
+ */
+export function leadAnswerLabel(field: AnswerField, value: string | null | undefined): string {
+  if (value == null) return NOT_RECORDED;
+  return ANSWER_LABELS[field]?.[value] ?? NOT_RECORDED;
+}
+
+/** Multi-select wizard answer (aiUseTypes) -> comma-joined labels. Same degrade-to-NOT_RECORDED rule as `leadAnswerLabel`. */
+export function leadAnswerLabels(field: AnswerField, values: string[] | null | undefined): string {
+  if (!values || values.length === 0) return NOT_RECORDED;
+  const labels = values.map((v) => ANSWER_LABELS[field]?.[v]);
+  if (labels.some((label) => label === undefined)) return NOT_RECORDED;
+  return labels.join(", ");
 }
 
 /**

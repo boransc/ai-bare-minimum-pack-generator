@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cloudflareConfigured } from "@/lib/cloudflare/config";
 import { getJson, kvKeys } from "@/lib/cloudflare/kv";
-import type { LeadSummary } from "@/lib/storage/packs";
+import { leadAnswerLabel, leadAnswerLabels, type LeadSummary } from "@/lib/storage/packs";
 
 export const metadata: Metadata = {
   title: "Lead list — Admin",
@@ -145,6 +145,7 @@ export default async function AdminPage() {
                 <th>Verdict</th>
                 <th>Red lines</th>
                 <th>Playbook triggers</th>
+                <th>Wizard answers</th>
               </tr>
             </thead>
             <tbody>
