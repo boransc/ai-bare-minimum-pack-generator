@@ -8,7 +8,7 @@ import type { WizardAnswers } from "@/lib/domain/types";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const limit = checkRateLimit(clientKey(request.headers));
+  const limit = await checkRateLimit(clientKey(request.headers));
   if (!limit.allowed) {
     return NextResponse.json(
       {

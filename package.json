@@ -9,7 +9,8 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "tailoring-check": "vitest run scripts/tailoring-check.test.ts"
   },
   "dependencies": {
     "next": "16.3.4",

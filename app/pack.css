@@ -378,6 +378,21 @@
   height: 15px;
   border: 1px solid var(--muted);
   margin-top: 3px;
+  accent-color: var(--green);
+}
+
+.checklist-progress {
+  font: 500 12px var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 22px 0 0;
+}
+
+.checklist-note {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 22px 0 0;
 }
 
 .checklist strong {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CONTENT_VERSION_LABEL } from "@/content/v1";
 import { CONTROLS_BY_NUMBER } from "@/content/v1/controls";
 import {
@@ -13,8 +14,20 @@ import { VERDICT_COPY } from "@/content/v1/scoring";
 import { scoreContradictsVerdict } from "@/lib/domain/assessment";
 import { whatToDoFirst } from "@/lib/domain/checklist";
 import { displayName, type GeneratedPack } from "@/lib/domain/pack";
+import type { ChecklistItem } from "@/lib/domain/types";
 
-export function PackResult({ pack }: { pack: GeneratedPack }) {
+interface PackResultProps {
+  pack: GeneratedPack;
+  /**
+   * Present only once the pack has a saved, returnable link. On the
+   * just-generated result page there is no token yet, so the checklist
+   * renders read-only rather than pretending to save progress it can't.
+   */
+  token?: string;
+  checklistState?: Record<string, boolean>;
+}
+
+export function PackResult({ pack, token, checklistState }: PackResultProps) {
   const { assessment, checklist, tailoring, playbookTriggers } = pack;
   const met = assessment.verdict === "met";
   const name = displayName(pack);
@@ -229,24 +242,7 @@ export function PackResult({ pack }: { pack: GeneratedPack }) {
           Working through these does not change the result above. That is a dated
           record of where you stood on {date}. To move your score, re-take the check.
         </p>
-        <ul className="checklist">
-          {checklist.map((item) => (
-            <li key={item.id} className={item.redLine ? "red-line" : undefined}>
-              <span className="check-box" aria-hidden="true" />
-              <div>
-                <strong>{item.title}</strong>
-                <p>{item.detail}</p>
-              </div>
-              <span className="check-tag">
-                {item.kind === "find-out"
-                  ? "Find out"
-                  : item.redLine
-                    ? `Point ${item.controlNumber} · Red line`
-                    : `Point ${item.controlNumber}`}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <Checklist checklist={checklist} token={token} checklistState={checklistState} />
       </section>
 
       {/* Full Playbook ----------------------------------------------------- */}
@@ -299,5 +295,122 @@ export function PackResult({ pack }: { pack: GeneratedPack }) {
         <span>{PACK_FOOTER.trademarks}</span>
       </footer>
     </main>
+  );
+}
+
+/**
+ * The checklist, split out because it is the one part of the pack with its
+ * own state and its own network call. Everything above it stays a pure
+ * render of the frozen assessment.
+ */
+function Checklist({
+  checklist,
+  token,
+  checklistState,
+}: {
+  checklist: ChecklistItem[];
+  token?: string;
+  checklistState?: Record<string, boolean>;
+}) {
+  const [state, setState] = useState<Record<string, boolean>>(checklistState ?? {});
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  const doneCount = checklist.filter((item) => state[item.id]).length;
+
+  async function toggle(itemId: string, next: boolean) {
+    if (!token) return;
+
+    const previous = state[itemId] ?? false;
+    setError(null);
+    setState((current) => ({ ...current, [itemId]: next }));
+    setPendingIds((current) => new Set(current).add(itemId));
+
+    try {
+      const response = await fetch("/api/checklist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, itemId, done: next }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(
+          body?.message ?? "That didn't save. Please try again.",
+        );
+      }
+    } catch {
+      // Revert to what the server last confirmed, and say plainly what happened.
+      setState((current) => ({ ...current, [itemId]: previous }));
+      setError(
+        "That change didn't save — your connection may have dropped. Try ticking it again.",
+      );
+    } finally {
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  }
+
+  return (
+    <>
+      {token && (
+        <p className="checklist-progress" aria-live="polite">
+          {doneCount} of {checklist.length} complete
+        </p>
+      )}
+      {!token && checklist.length > 0 && (
+        <p className="checklist-note">
+          Progress here isn&rsquo;t saved on this page. Use your saved pack
+          link to tick items off and come back to them later.
+        </p>
+      )}
+      {error && (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      )}
+      <ul className="checklist">
+        {checklist.map((item) => {
+          const checked = Boolean(state[item.id]);
+          const inputId = `checklist-${item.id}`;
+          return (
+            <li key={item.id} className={item.redLine ? "red-line" : undefined}>
+              {token ? (
+                <input
+                  id={inputId}
+                  type="checkbox"
+                  className="check-box"
+                  checked={checked}
+                  disabled={pendingIds.has(item.id)}
+                  onChange={(event) => toggle(item.id, event.target.checked)}
+                />
+              ) : (
+                <span className="check-box" aria-hidden="true" />
+              )}
+              <div>
+                {token ? (
+                  <label htmlFor={inputId}>
+                    <strong>{item.title}</strong>
+                  </label>
+                ) : (
+                  <strong>{item.title}</strong>
+                )}
+                <p>{item.detail}</p>
+              </div>
+              <span className="check-tag">
+                {item.kind === "find-out"
+                  ? "Find out"
+                  : item.redLine
+                    ? `Point ${item.controlNumber} · Red line`
+                    : `Point ${item.controlNumber}`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
