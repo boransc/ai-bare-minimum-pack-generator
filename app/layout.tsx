@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Mono, Manrope, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import "./pack.css";
+import "./pack-documents.css";
 import "./save-pack.css";
 import "./tailoring.css";
 

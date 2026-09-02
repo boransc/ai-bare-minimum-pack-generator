@@ -18,6 +18,8 @@ import { displayName, type GeneratedPack } from "@/lib/domain/pack";
 import { useTailoring } from "./use-tailoring";
 import { TailoredBlock, TailoringStatusNote } from "./tailored-block";
 import { SavePack } from "./save-pack";
+import { PolicyDocument } from "./policy-document";
+import { StaffNoteDocument } from "./staff-note-document";
 import type { ChecklistItem } from "@/lib/domain/types";
 
 interface PackResultProps {
@@ -252,6 +254,27 @@ export function PackResult({
           record of where you stood on {date}. To move your score, re-take the check.
         </p>
         <Checklist checklist={checklist} token={token} checklistState={checklistState} />
+      </section>
+
+      {/* Part 3 — the policy template -------------------------------------- */}
+      <section className="section-block">
+        <h2 className="h2">The AI usage policy.</h2>
+        <p className="lede">
+          Adopt this as your own. Fill in the bracketed fields, approve it at a
+          meeting, issue it to everyone, and collect acknowledgements. The wording
+          is Karl&rsquo;s and is reproduced unchanged.
+        </p>
+        <PolicyDocument orgName={pack.orgName} />
+      </section>
+
+      {/* Part 4 — the staff note ------------------------------------------- */}
+      <section className="section-block">
+        <h2 className="h2">The staff note.</h2>
+        <p className="lede">
+          Send this to everyone on the day the policy is approved. The last part is
+          a do and don&rsquo;t sheet to print and pin up.
+        </p>
+        <StaffNoteDocument orgName={pack.orgName} />
       </section>
 
       {/* Full Playbook ----------------------------------------------------- */}

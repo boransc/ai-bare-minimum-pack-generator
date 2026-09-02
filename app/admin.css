@@ -142,7 +142,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 860px;
+  min-width: 960px;
 }
 
 .admin-table th {
@@ -222,6 +222,60 @@
   gap: 3px;
   font-size: 12px;
   color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Wizard answers (per-row expand)
+
+   The scannable columns stay as they are; the full eight wizard answers
+   -- the reason this table exists at all -- live behind a native <details>
+   in the last column, opened with no JS. The expanded content is capped to
+   a fixed width and left to wrap, so a long answer grows the row rather than
+   the table: the table's own horizontal scroll (see .admin-table-wrap) never
+   needs to widen to fit it.
+   -------------------------------------------------------------------------- */
+
+.admin-answers-toggle summary {
+  cursor: pointer;
+  font: 500 12px var(--sans);
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.admin-answers-toggle summary:hover {
+  text-decoration: underline;
+}
+
+.admin-answers {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  width: 220px;
+  max-width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: auto;
+  gap: 2px 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-answers dt {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.admin-answers dt:first-child {
+  margin-top: 0;
+}
+
+.admin-answers dd {
+  margin: 0;
+  color: var(--ink);
+  word-break: break-word;
 }
 
 /* --------------------------------------------------------------------------

@@ -160,8 +160,8 @@ export default async function AdminPage() {
                       </Link>
                     </td>
                     <td>{formatDate(lead.createdAt)}</td>
-                    <td>{lead.sector ?? "—"}</td>
-                    <td>{lead.size ?? "—"}</td>
+                    <td>{lead.sector ? leadAnswerLabel("sector", lead.sector) : "—"}</td>
+                    <td>{lead.size ? leadAnswerLabel("size", lead.size) : "—"}</td>
                     <td>
                       <span className="admin-score">{typeof lead.score === "number" ? lead.score : "—"}/8</span>
                     </td>
@@ -189,6 +189,29 @@ export default async function AdminPage() {
                           ))}
                         </ul>
                       )}
+                    </td>
+                    <td>
+                      <details className="admin-answers-toggle">
+                        <summary>Answers</summary>
+                        <dl className="admin-answers">
+                          <dt>Sector</dt>
+                          <dd>{leadAnswerLabel("sector", lead.sector)}</dd>
+                          <dt>Size</dt>
+                          <dd>{leadAnswerLabel("size", lead.size)}</dd>
+                          <dt>Current AI use</dt>
+                          <dd>{leadAnswerLabel("currentAiUse", lead.currentAiUse)}</dd>
+                          <dt>What AI is used for</dt>
+                          <dd>{leadAnswerLabels("aiUseTypes", lead.aiUseTypes)}</dd>
+                          <dt>Sensitive data</dt>
+                          <dd>{leadAnswerLabel("sensitiveData", lead.sensitiveData)}</dd>
+                          <dt>Regulated</dt>
+                          <dd>{leadAnswerLabel("regulated", lead.regulated)}</dd>
+                          <dt>Consequential decisions</dt>
+                          <dd>{leadAnswerLabel("consequentialDecisions", lead.consequentialDecisions)}</dd>
+                          <dt>Board owner</dt>
+                          <dd>{leadAnswerLabel("boardOwner", lead.boardOwner)}</dd>
+                        </dl>
+                      </details>
                     </td>
                   </tr>
                 );

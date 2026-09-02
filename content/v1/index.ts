@@ -29,3 +29,6 @@ export * from "./controls";
 export * from "./scoring";
 export * from "./guidance";
 export * from "./wizard";
+export * from "./brackets";
+export * from "./policy";
+export * from "./staff-note";
