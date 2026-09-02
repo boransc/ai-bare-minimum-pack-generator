@@ -51,10 +51,19 @@ Run `npm run email-check` to see what is configured, and
 `EMAIL_TO=you@example.com npm run email-check` to send a real message and have
 the provider's own error reported back.
 
-**If Brevo returns 401**, check its IP allowlist first
-(`app.brevo.com/security/authorised_ips`). Turn the restriction *off* rather
-than adding a single address: serverless egress IPs change between invocations,
-so an allowlist works on a laptop and fails in production.
+Two Brevo gates worth knowing about, both account settings rather than code:
+
+- **401** — an IP allowlist is enabled
+  (`app.brevo.com/security/authorised_ips`). Turn the restriction *off* rather
+  than adding a single address: serverless egress IPs change between
+  invocations, so an allowlist works on a laptop and fails in production.
+- **403, "account is not yet activated"** — Brevo holds new free accounts back
+  from transactional sending until they review them. Nothing here can bypass
+  it, and an SMTP key will not either: Brevo calls the service "SMTP" even over
+  the REST API, so the message is about the account, not the credential.
+
+Neither blocks the product. With sending unavailable the result page offers to
+take an address for Governance AI instead, and says exactly that.
 
 `CF_VECTORIZE_INDEX` is issued but deliberately unused — see [Decisions](#decisions-and-why).
 

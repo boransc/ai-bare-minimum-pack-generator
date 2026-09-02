@@ -90,6 +90,15 @@ describe.skipIf(!recipient)("email delivery", () => {
         console.log("      both; only the v3 key works against api.brevo.com.");
         console.log("   3. The key was revoked or belongs to another account.");
       }
+      if (result.reason.includes("403")) {
+        console.log("  403 with 'account is not yet activated' is Brevo holding a");
+        console.log("  new account back until they review it. Nothing in this repo");
+        console.log("  can bypass it, and an SMTP key will not either — Brevo calls");
+        console.log("  the transactional service 'SMTP' even over the REST API.");
+        console.log("  Complete the account profile, or email contact@brevo.com.");
+        console.log("  The product does not depend on this: with sending unavailable");
+        console.log("  the page offers to take an address instead, and says so.");
+      }
       if (result.reason.includes("400")) {
         console.log("  400 usually means EMAIL_FROM is not a verified sender.");
       }
