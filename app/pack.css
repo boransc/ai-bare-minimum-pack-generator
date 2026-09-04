@@ -358,12 +358,39 @@
 
 /* No border: the check-tag already reads "Point N · Red line". */
 
+/* Sized to the grid column on a mouse, so nothing moves; widened to a real
+   touch target under a coarse pointer. The box itself stays 15px either way —
+   the target grows, not the decoration. */
+.check-hit {
+  display: grid;
+  place-items: start center;
+  width: 20px;
+}
+
 .check-box {
   width: 15px;
   height: 15px;
   border: 1px solid var(--muted);
   margin-top: 3px;
   accent-color: var(--green);
+}
+
+@media (pointer: coarse) {
+  .checklist li {
+    /* Widen the column to match the target, or the grid clips it. */
+    grid-template-columns: 44px 1fr auto;
+  }
+  .check-hit {
+    width: 44px;
+    min-height: 44px;
+    place-items: center;
+    /* Pull the enlarged target back over the row's padding so the text does
+       not visibly shift away from the box on a phone. */
+    margin: -10px 0 -10px -12px;
+  }
+  .check-box {
+    margin-top: 0;
+  }
 }
 
 .checklist-progress {
@@ -488,6 +515,13 @@
 @media (max-width: 760px) {
   .checklist li {
     grid-template-columns: 20px 1fr;
+  }
+  /* Narrow *and* touch: the coarse-pointer rule above widens the first column,
+     and this two-column layout has to agree with it or the tag wraps oddly. */
+  @media (pointer: coarse) {
+    .checklist li {
+      grid-template-columns: 44px 1fr;
+    }
   }
   .check-tag {
     grid-column: 2;

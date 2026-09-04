@@ -14,7 +14,12 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { AI_MODEL, tailoringEnabled } from "@/lib/cloudflare/config";
-import { describeFailure, extractJson, runChat } from "@/lib/cloudflare/workers-ai";
+import {
+  describeFailure,
+  extractJson,
+  runChat,
+  type ChatMessage,
+} from "@/lib/cloudflare/workers-ai";
 import { getJson, kvKeys, putJson } from "@/lib/cloudflare/kv";
 import { CONTENT_VERSION } from "@/content/v1";
 import type {
@@ -51,6 +56,9 @@ const RETRY_MAX_TOKENS = 4000;
  * sampling variance is what makes the variation happen at all.
  */
 const REGENERATE_TEMPERATURE = 0.9;
+/** The retry's temperature: still clear of first generation's 0.3, but far
+ *  likelier to respect a tight character cap. See regenerateUnsafe. */
+const REGENERATE_RETRY_TEMPERATURE = 0.55;
 
 export interface TailorInput {
   wizard: WizardAnswers;
@@ -268,15 +276,53 @@ async function regenerateUnsafe(
   const messages = buildRegenerateMessages(wizard, unmetControls, selector, nonce);
   const jsonSchema = singleSlotJsonSchema(selector);
 
-  let reply = await runChat(messages, { jsonSchema, temperature: REGENERATE_TEMPERATURE });
+  // Two attempts, the second cooler.
+  //
+  // Testing the deployed instance found openingContext failing roughly two
+  // times in three while riskScenario and controlEmphasis never did. The
+  // reason is the cap: openingContext allows 350 characters against
+  // riskScenario's 600, and at 0.9 the model overruns the tightest one often
+  // enough to matter. The prompt states the limit and the JSON schema carries
+  // maxLength; neither is a guarantee, and validateSlotText is right to reject
+  // an overrun rather than truncate mid-sentence.
+  //
+  // What was wrong was giving up on it. Only a truncated or malformed reply was
+  // retried, so a validation rejection went straight to a 502 — and unlike
+  // first generation, regenerate has no per-slot fallback to land on, because
+  // the visitor already has text on screen and asked for different text.
+  // Dropping to 0.55 on the retry keeps the result meaningfully different from
+  // the 0.3 of first generation while being far likelier to fit.
+  const attempts: Array<{ temperature: number; maxTokens?: number }> = [
+    { temperature: REGENERATE_TEMPERATURE },
+    { temperature: REGENERATE_RETRY_TEMPERATURE, maxTokens: RETRY_MAX_TOKENS },
+  ];
 
-  if (!reply.ok && (reply.failure.kind === "truncated" || reply.failure.kind === "malformed")) {
-    reply = await runChat(messages, {
-      jsonSchema,
-      temperature: REGENERATE_TEMPERATURE,
-      maxTokens: RETRY_MAX_TOKENS,
-    });
+  let lastReason = "regeneration produced nothing usable";
+
+  for (const attempt of attempts) {
+    const outcome = await attemptRegeneration(messages, jsonSchema, selector, attempt);
+    if (outcome.ok) return outcome;
+    lastReason = outcome.reason;
   }
+
+  return { ok: false, reason: lastReason };
+}
+
+/**
+ * One regeneration attempt, all the way through to a validated string.
+ *
+ * Separated so the retry above differs only in its sampling settings, and so
+ * every rejection reason — transport, extraction, schema, boundary — is
+ * reported in the same shape rather than three of them short-circuiting the
+ * loop and one of them not.
+ */
+async function attemptRegeneration(
+  messages: ChatMessage[],
+  jsonSchema: Record<string, unknown>,
+  selector: SlotSelector,
+  options: { temperature: number; maxTokens?: number },
+): Promise<RegenerateResult> {
+  const reply = await runChat(messages, { jsonSchema, ...options });
 
   if (!reply.ok) {
     return { ok: false, reason: `model call failed: ${describeFailure(reply.failure)}` };

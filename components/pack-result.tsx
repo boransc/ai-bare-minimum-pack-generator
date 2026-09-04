@@ -504,18 +504,24 @@ function Checklist({
           const inputId = `checklist-${item.id}`;
           return (
             <li key={item.id} className={item.redLine ? "red-line" : undefined}>
-              {token ? (
-                <input
-                  id={inputId}
-                  type="checkbox"
-                  className="check-box"
-                  checked={checked}
-                  disabled={pendingIds.has(item.id)}
-                  onChange={(event) => toggle(item.id, event.target.checked)}
-                />
-              ) : (
-                <span className="check-box" aria-hidden="true" />
-              )}
+              {/* The wrapper exists only to carry a finger-sized hit area on a
+                  touch screen without growing the box you can see. A 15px
+                  checkbox is the right visual weight in a printed-looking
+                  document and the wrong thing to ask a thumb to find. */}
+              <span className="check-hit">
+                {token ? (
+                  <input
+                    id={inputId}
+                    type="checkbox"
+                    className="check-box"
+                    checked={checked}
+                    disabled={pendingIds.has(item.id)}
+                    onChange={(event) => toggle(item.id, event.target.checked)}
+                  />
+                ) : (
+                  <span className="check-box" aria-hidden="true" />
+                )}
+              </span>
               <div>
                 {token ? (
                   <label htmlFor={inputId}>
