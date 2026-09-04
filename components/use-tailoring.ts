@@ -77,22 +77,20 @@ function requestTailoring(pack: GeneratedPack, token: string): Promise<Tailoring
  * to fetch and no reason to pay for text we already have.
  */
 export function useTailoring(pack: GeneratedPack, token: string | undefined): TailoringState {
-  const [state, setState] = useState<TailoringState>(() =>
-    pack.tailoring
-      ? { tailoring: pack.tailoring, status: "ready" }
-      : { tailoring: null, status: "loading" },
-  );
+  // No token means no saved pack to tailor against. Not a real path today — the
+  // wizard always redirects to /pack/[token] — but the prop is optional, and
+  // "loading" would leave a placeholder that never resolves. Decided here in
+  // the initialiser rather than corrected by an effect: a state an effect
+  // immediately overwrites is a render the user did not need.
+  const [state, setState] = useState<TailoringState>(() => {
+    if (pack.tailoring) return { tailoring: pack.tailoring, status: "ready" };
+    if (!token) return { tailoring: null, status: "unavailable" };
+    return { tailoring: null, status: "loading" };
+  });
 
   useEffect(() => {
     if (pack.tailoring) return;
-    // No token means no saved pack to tailor against. Not a real path today —
-    // the wizard always redirects to /pack/[token] — but the prop is optional,
-    // and leaving the state on "loading" would show a placeholder that never
-    // resolves. Settle on unavailable, which is what the page already handles.
-    if (!token) {
-      setState({ tailoring: null, status: "unavailable" });
-      return;
-    }
+    if (!token) return;
 
     let live = true;
 

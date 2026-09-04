@@ -89,8 +89,8 @@ lib/domain/        Scoring, checklist ordering, pack assembly. Pure functions, n
 lib/tailoring/     Source map, prompt, schema, validators, fallbacks, KV cache.
 lib/cloudflare/    KV and Workers AI over REST, via the AI Gateway.
 lib/storage/       Tokens, saved packs, retention, the lead index.
-lib/email/         The return-link sender. SMTP is the live path; two REST
-                   adapters (Resend, Brevo) sit behind it, unused.
+lib/email/         The return-link sender. SMTP is the live path; a Resend
+                   adapter sits behind it, unused.
 lib/export/        Parts 3 and 4 as editable Word documents. Pure string builders.
 app/               Routes. components/ holds the client pieces.
 scripts/           The tailoring check and the model probe. Both opt-in, both cost money.
@@ -131,18 +131,19 @@ promising a send it cannot make. Run `npm run email-check` for the current state
 `EMAIL_TO=you@example.com npm run email-check` to attempt a real send and get the
 provider's own error back.
 
-The route matters, because two more obvious ones are dead ends. Brevo needs no domain but
-holds new accounts behind a manual review with no timeline, and this account is still in
-it. Resend needs DNS records on a domain we do not control, and its shared test sender
-only ever delivers to the account owner's own address. Sending through a mailbox the
-organisation already owns needs neither: the domain already receives mail, so its sender
-authentication already exists. Both REST adapters are still in `lib/email/send.ts` and
-activate only if their key is set — SMTP takes precedence. **A half-filled SMTP block is
-deliberately ignored** rather than selected, so someone midway through setup cannot
-shadow a working key and fail every send.
+The route matters, because the two obvious ones are dead ends. Brevo needs no domain but
+holds new accounts behind a manual review with no timeline, and never released this one;
+its adapter has been removed, because a provider that has never sent a message is not an
+option, it is a trap for whoever reads the code next. Resend needs DNS records on a
+domain we do not control, and its shared test sender only ever delivers to the account
+owner's own address — that adapter is kept, because adding DNS records is a realistic
+future and the switch would then be an environment variable rather than a code change.
 
-If Governance AI ever adds DNS records for a sending domain, Resend becomes the tidier
-choice and the switch is an environment variable, not a code change.
+Sending through a mailbox the organisation already owns needs neither: the domain already
+receives mail, so its sender authentication already exists. SMTP takes precedence
+whenever it is configured, and **a half-filled SMTP block is deliberately ignored**
+rather than selected, so someone midway through setup cannot shadow a working Resend key
+and fail every send.
 
 ---
 

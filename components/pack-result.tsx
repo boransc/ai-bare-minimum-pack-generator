@@ -54,15 +54,18 @@ export function PackResult({
   // in. If it never arrives, nothing is missing — only less personal.
   const { tailoring: fetchedTailoring, status: tailoringStatus } = useTailoring(pack, token);
 
-  // A locally-held copy so a regenerated slot can update the page immediately
-  // without waiting on (or re-triggering) useTailoring's own fetch. Synced
-  // whenever the fetch produces a new object — first arrival, or a fresh
-  // mount with a different pack — but never overwritten by it afterwards, so
-  // a regenerate result is not clobbered by a stale in-flight request.
-  const [tailoring, setTailoring] = useState<TailoringResult | null>(fetchedTailoring);
-  useEffect(() => {
-    if (fetchedTailoring) setTailoring(fetchedTailoring);
-  }, [fetchedTailoring]);
+  // Regenerated slots are held separately and win, so a regenerate result is
+  // never clobbered by a fetch that was already in flight when the visitor
+  // asked for new text. Derived rather than mirrored into state by an effect:
+  // copying the fetch into local state meant a second render on every arrival,
+  // and two places that could disagree about what the page is showing.
+  const [regenerated, setRegenerated] = useState<TailoringResult | null>(null);
+  const tailoring = regenerated ?? fetchedTailoring;
+
+  // Takes the value shown right now, so a second regenerate builds on the
+  // first rather than on whatever the original fetch returned.
+  const setTailoring = (update: (current: TailoringResult | null) => TailoringResult | null) =>
+    setRegenerated(update(tailoring));
 
   const met = assessment.verdict === "met";
   const name = displayName(pack);

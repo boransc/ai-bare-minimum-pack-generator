@@ -2,29 +2,30 @@
  * Sending the return link by email.
  *
  * Provider-agnostic at the call site: `sendReturnLink` is the only thing the
- * rest of the app knows about. Three adapters, chosen by whichever credentials
+ * rest of the app knows about. Two adapters, chosen by whichever credentials
  * are present.
  *
- * Why three, in the order they are preferred:
- *
- *   SMTP, through a mailbox the organisation already owns. This is the one
- *   that actually works here, and it is first for that reason. It needs no DNS
- *   change and no approval queue: the domain already receives mail, so its
- *   sender authentication already exists, and an authenticated submission from
- *   its own account inherits it. Google Workspace and similar accept an app
- *   password on port 465. Deliverability is whatever the organisation's own
- *   mail reputation is, which is the best available answer.
- *
- *   Brevo verifies a single sender *address*, so an ordinary mailbox works and
- *   nothing needs to be bought. In practice a new account is held behind a
- *   manual review — "Your SMTP account is not yet activated. Please contact us
- *   at contact@brevo.com" — with no published timeline, which is why it is no
- *   longer the primary path. Nothing in this repo can bypass that.
+ *   SMTP, through a mailbox the organisation already owns. This is the one that
+ *   works, and the one in use. It needs no DNS change and no approval queue:
+ *   the domain already receives mail, so its sender authentication already
+ *   exists, and an authenticated submission from its own account inherits it.
+ *   Google Workspace and similar accept an app password on port 465.
+ *   Deliverability is whatever the organisation's own mail reputation is, which
+ *   is the best available answer.
  *
  *   Resend requires a verified sending *domain* before it will deliver to
- *   arbitrary recipients, which needs DNS records on a domain you own. Its
- *   shared `onboarding@resend.dev` sender only ever delivers to the account
+ *   arbitrary recipients, which needs DNS records on a domain you own. Kept
+ *   because that is a realistic future: if Governance AI adds those records,
+ *   this becomes the tidier option and the switch is an environment variable.
+ *   Its shared `onboarding@resend.dev` sender only ever delivers to the account
  *   owner's own address, so it is a demo, not a product.
+ *
+ * A third adapter for Brevo was removed. Brevo verifies a single sender address
+ * and so needs no domain, which made it the original choice, but it holds new
+ * accounts behind a manual review with no published timeline and never released
+ * this one — "Your SMTP account is not yet activated". Nothing here could bypass
+ * that, so carrying a provider that had never sent a message was only a way to
+ * mislead whoever read this next.
  *
  * The message may contain the personal link and one line of context. Nothing
  * else. The score, the verdict and the gaps live behind the link, never in the
@@ -33,7 +34,6 @@
  */
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
-const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const SEND_TIMEOUT_MS = 8000;
 const SUBJECT = "Your AI Bare Minimum Pack link";
 
@@ -42,7 +42,7 @@ export type SendResult =
   /** `detail` is the provider's own words, for logs and the check script — never shown to a visitor. */
   | { ok: false; reason: string; detail?: string };
 
-export type EmailProvider = "smtp" | "brevo" | "resend" | null;
+export type EmailProvider = "smtp" | "resend" | null;
 
 function escapeHtml(value: string): string {
   return value
@@ -74,19 +74,18 @@ function buildBody(url: string): { text: string; html: string } {
 /**
  * Which adapter the current environment can use.
  *
- * Brevo wins when both are configured, because it is the one that works
- * without owning a domain and is therefore the deliberate choice here.
+ * SMTP first: it is the one that can deliver to an arbitrary visitor without a
+ * DNS change or anybody's approval, so when it is configured it is the one we
+ * want. All three of its variables are required — a host with no credentials is
+ * someone midway through setting this up, and treating that as configured would
+ * shadow a working Resend key and then fail every send.
  */
 export function emailProvider(): EmailProvider {
   const from = process.env.EMAIL_FROM;
   if (!from) return null;
-  // SMTP first: see the header. It is the only one of the three that can
-  // deliver to an arbitrary visitor without either a DNS change or somebody
-  // else's approval, so when it is configured it is the one we want.
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     return "smtp";
   }
-  if (process.env.BREVO_API_KEY) return "brevo";
   if (process.env.RESEND_API_KEY) return "resend";
   return null;
 }
@@ -100,26 +99,6 @@ export function emailProvider(): EmailProvider {
  */
 export function emailSendingConfigured(): boolean {
   return emailProvider() !== null;
-}
-
-async function sendViaBrevo(
-  apiKey: string,
-  from: string,
-  to: string,
-  body: { text: string; html: string },
-): Promise<Response> {
-  return fetch(BREVO_ENDPOINT, {
-    method: "POST",
-    headers: { "api-key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sender: { email: from, name: "Governance AI" },
-      to: [{ email: to }],
-      subject: SUBJECT,
-      textContent: body.text,
-      htmlContent: body.html,
-    }),
-    signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
-  });
 }
 
 async function sendViaResend(
@@ -222,23 +201,19 @@ export async function sendReturnLink(to: string, url: string): Promise<SendResul
 
   const body = buildBody(url);
 
-  // SMTP reports its own outcome; the REST adapters hand back a Response to
-  // be interpreted below.
+  // SMTP reports its own outcome; the REST adapter hands back a Response to be
+  // interpreted below.
   if (provider === "smtp") {
     return sendViaSmtp(from, to, body);
   }
 
   try {
-    const response =
-      provider === "brevo"
-        ? await sendViaBrevo(process.env.BREVO_API_KEY!, from, to, body)
-        : await sendViaResend(process.env.RESEND_API_KEY!, from, to, body);
+    const response = await sendViaResend(process.env.RESEND_API_KEY!, from, to, body);
 
     if (!response.ok) {
       // Carry what the provider actually said. A bare status sends you hunting
-      // for a cause the response body already names — Brevo, for instance,
-      // distinguishes an invalid key from an unverified sender in the text,
-      // and both arrive as a 401 or 400.
+      // for a cause the response body already names: an invalid key and an
+      // unverified sender are distinguished in the text and not in the status.
       const detail = await response.text().catch(() => "");
       return {
         ok: false,

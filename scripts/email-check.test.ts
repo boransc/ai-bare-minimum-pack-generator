@@ -64,7 +64,7 @@ describe("email configuration", () => {
 
     // Reporting, not asserting. An unconfigured environment is a valid state,
     // and the product is built to behave honestly in it.
-    expect(["smtp", "brevo", "resend", null]).toContain(provider);
+    expect(["smtp", "resend", null]).toContain(provider);
   });
 });
 
@@ -77,7 +77,7 @@ describe.skipIf(!recipient)("email delivery", () => {
 
     expect(
       provider,
-      "No provider configured. Set EMAIL_FROM and BREVO_API_KEY (or RESEND_API_KEY).",
+      "No provider configured. Set EMAIL_FROM plus the SMTP_* block (or RESEND_API_KEY).",
     ).not.toBeNull();
 
     // Deliberately not a real token: this is a delivery test, not a pack, and
@@ -92,26 +92,15 @@ describe.skipIf(!recipient)("email delivery", () => {
         console.log(`  provider said: ${result.detail}`);
       }
       if (result.reason.includes("401")) {
-        console.log("  401 has three likely causes, in the order worth checking:");
-        console.log("   1. Brevo's IP allowlist is on. The message above names the");
-        console.log("      blocked address. Turn the restriction OFF rather than");
-        console.log("      adding one IP: serverless egress addresses change, so an");
-        console.log("      allowlist fixes your laptop and breaks production.");
-        console.log("   2. The key is an SMTP key, not an API v3 key. Brevo issues");
-        console.log("      both; only the v3 key works against api.brevo.com.");
-        console.log("   3. The key was revoked or belongs to another account.");
-      }
-      if (result.reason.includes("403")) {
-        console.log("  403 with 'account is not yet activated' is Brevo holding a");
-        console.log("  new account back until they review it. Nothing in this repo");
-        console.log("  can bypass it, and an SMTP key will not either — Brevo calls");
-        console.log("  the transactional service 'SMTP' even over the REST API.");
-        console.log("  Complete the account profile, or email contact@brevo.com.");
-        console.log("  The product does not depend on this: with sending unavailable");
-        console.log("  the page offers to take an address instead, and says so.");
+        console.log("  401 from Resend is the key itself: revoked, belonging to");
+        console.log("  another account, or pasted with whitespace. The message");
+        console.log("  above says which.");
       }
       if (result.reason.includes("400")) {
         console.log("  400 usually means EMAIL_FROM is not a verified sender.");
+        console.log("  On Resend that means its domain has no DNS records yet;");
+        console.log("  the shared onboarding@resend.dev sender only ever reaches");
+        console.log("  the Resend account owner's own address.");
       }
       if (result.reason.includes("smtp")) {
         console.log("  SMTP failures, by what the message above says:");

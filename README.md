@@ -32,7 +32,6 @@ Put these in `.env.local`, and the same values in the Vercel project settings.
 | `EMAIL_FROM` | no | Sender address. Required for any email sending. On SMTP it must be `SMTP_USER`'s own address or a verified alias. |
 | `SMTP_HOST` `SMTP_USER` `SMTP_PASSWORD` | no | Turns on emailing the return link. This is how email works here — see below. `SMTP_PORT` defaults to 465. All three must be set; a partial block is ignored. |
 | `RESEND_API_KEY` | no | Unused fallback adapter. Needs a verified sending *domain*, so it becomes the better option if Governance AI ever adds DNS records. |
-| `BREVO_API_KEY` | no | Unused. Kept only so the adapter is not silently undocumented — see below. |
 
 **On email.** Optional, and off until credentials exist. The page checks on the
 server and never offers to send what it cannot send — it takes the address for
@@ -72,18 +71,21 @@ failure, and names the likely cause — an ordinary password where an app
 password is needed, an app password pasted with its spaces, a blocked port, a
 from-address that is not the authenticated user.
 
-**Why not a hosted email API.** Both were tried first and neither can deliver
-to a stranger here. [Brevo](https://developers.brevo.com/reference/sendtransacemail)
-verifies a single sender address, so it needs no domain — but it holds new
-accounts behind a manual review with no published timeline, and the account
-here is still in it (*"Your SMTP account is not yet activated"*). Nothing in
-this repo can bypass that. [Resend](https://resend.com) needs a verified
-sending *domain*, and its shared `onboarding@resend.dev` sender
+**Why not a hosted email API.** Two were tried first, so this is recorded to
+save the next person the same day.
+[Brevo](https://developers.brevo.com/reference/sendtransacemail) verifies a
+single sender address and so needs no domain, which made it the original
+choice — but it holds new accounts behind a manual review with no published
+timeline, and never released this one (*"Your SMTP account is not yet
+activated"*). Nothing in code can bypass that, so its adapter was removed
+rather than left in place looking like an option.
+[Resend](https://resend.com) needs a verified sending *domain*, and its shared
+`onboarding@resend.dev` sender
 [only ever delivers to the account owner's own address](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain) —
-a demo, not a product. Both adapters are still in `lib/email/send.ts` and are
-selected only if their key is set; SMTP takes precedence over both. If
-Governance AI adds DNS records later, Resend becomes the tidier choice and the
-switch is an environment variable.
+a demo, not a product. Its adapter is kept, because adding DNS records is a
+realistic future: if that happens, Resend becomes the tidier choice and the
+switch is an environment variable rather than a code change. SMTP takes
+precedence whenever it is configured.
 
 `CF_VECTORIZE_INDEX` is issued but deliberately unused — see [Decisions](#decisions-and-why).
 

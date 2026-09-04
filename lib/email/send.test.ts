@@ -4,7 +4,7 @@
  * Delivery needs a mailbox and a human looking at it (see scripts/email-check).
  * Everything short of delivery is testable here by standing in for `fetch`:
  * that we call the right endpoint with the right headers, that the payload
- * matches the shape Brevo documents, that provider selection behaves, and —
+ * matches the shape the provider documents, that selection behaves, and —
  * the one that actually matters — that the message carries the link and
  * nothing else about the organisation.
  */
@@ -15,7 +15,6 @@ import { emailProvider, emailSendingConfigured, sendReturnLink } from "./send";
 const LINK = "https://example.test/pack/abc123token";
 
 const ENV_KEYS = [
-  "BREVO_API_KEY",
   "RESEND_API_KEY",
   "EMAIL_FROM",
   // Cleared too, or an SMTP test leaks its host into every later test and
@@ -75,21 +74,8 @@ describe("provider selection", () => {
   });
 
   it("needs a sender address, not just a key", () => {
-    process.env.BREVO_API_KEY = "key";
+    process.env.RESEND_API_KEY = "key";
     expect(emailSendingConfigured()).toBe(false);
-  });
-
-  it("uses Brevo when configured", () => {
-    process.env.BREVO_API_KEY = "key";
-    process.env.EMAIL_FROM = "sender@example.test";
-    expect(emailProvider()).toBe("brevo");
-  });
-
-  it("prefers Brevo over Resend, because it is the one that works without a domain", () => {
-    process.env.BREVO_API_KEY = "brevo-key";
-    process.env.RESEND_API_KEY = "resend-key";
-    process.env.EMAIL_FROM = "sender@example.test";
-    expect(emailProvider()).toBe("brevo");
   });
 
   it("falls back to Resend when only that is configured", () => {
@@ -108,21 +94,20 @@ describe("provider selection", () => {
 
   it("ignores a half-configured SMTP block rather than failing every send", () => {
     // A host with no credentials is someone midway through setting this up.
-    // Choosing "smtp" here would take precedence over a Brevo key that works
-    // and then fail on every attempt.
+    // Choosing "smtp" here would shadow a Resend key that works and then fail
+    // on every attempt.
     process.env.SMTP_HOST = "smtp.example.test";
-    process.env.BREVO_API_KEY = "brevo-key";
+    process.env.RESEND_API_KEY = "resend-key";
     process.env.EMAIL_FROM = "sender@example.test";
-    expect(emailProvider()).toBe("brevo");
+    expect(emailProvider()).toBe("resend");
   });
 
-  it("prefers SMTP over both REST providers", () => {
+  it("prefers SMTP over Resend", () => {
     // SMTP goes through a mailbox the organisation already owns, so it needs
     // no DNS change and waits in nobody's approval queue.
     process.env.SMTP_HOST = "smtp.example.test";
     process.env.SMTP_USER = "sender@example.test";
     process.env.SMTP_PASSWORD = "app-password";
-    process.env.BREVO_API_KEY = "brevo-key";
     process.env.RESEND_API_KEY = "resend-key";
     process.env.EMAIL_FROM = "sender@example.test";
     expect(emailProvider()).toBe("smtp");
@@ -139,37 +124,30 @@ describe("not configured", () => {
   });
 });
 
-describe("the Brevo request", () => {
+describe("the Resend request", () => {
   beforeEach(() => {
-    process.env.BREVO_API_KEY = "test-key";
+    process.env.RESEND_API_KEY = "resend-key";
     process.env.EMAIL_FROM = "sender@example.test";
   });
 
-  it("matches the documented endpoint, method and auth header", async () => {
+  it("uses a bearer token and Resend's own field names", async () => {
     const calls = stubFetch();
+
     await sendReturnLink("someone@example.test", LINK);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe("https://api.brevo.com/v3/smtp/email");
+    expect(calls[0].url).toBe("https://api.resend.com/emails");
     expect(calls[0].init.method).toBe("POST");
-
-    const headers = calls[0].init.headers as Record<string, string>;
-    // Brevo authenticates with `api-key`, not a bearer token. Getting this
-    // wrong is a 401 that looks exactly like a bad key.
-    expect(headers["api-key"]).toBe("test-key");
-    expect(headers["Content-Type"]).toBe("application/json");
-  });
-
-  it("sends the payload shape Brevo documents", async () => {
-    const calls = stubFetch();
-    await sendReturnLink("someone@example.test", LINK);
+    expect((calls[0].init.headers as Record<string, string>).Authorization).toBe(
+      "Bearer resend-key",
+    );
 
     const body = JSON.parse(calls[0].init.body as string);
-    expect(body.sender.email).toBe("sender@example.test");
-    expect(body.to).toEqual([{ email: "someone@example.test" }]);
+    expect(body.from).toBe("sender@example.test");
+    expect(body.to).toEqual(["someone@example.test"]);
     expect(body.subject).toBeTruthy();
-    expect(body.textContent).toContain(LINK);
-    expect(body.htmlContent).toContain(LINK);
+    expect(body.text).toContain(LINK);
+    expect(body.html).toContain(LINK);
   });
 
   it("carries the link and nothing else about the organisation", async () => {
@@ -180,7 +158,7 @@ describe("the Brevo request", () => {
     // link, never in the email pointing at it. This test exists so that adding
     // "just the score, it's useful" to the body fails loudly.
     const body = JSON.parse(calls[0].init.body as string);
-    const message = `${body.subject} ${body.textContent} ${body.htmlContent}`.toLowerCase();
+    const message = `${body.subject} ${body.text} ${body.html}`.toLowerCase();
 
     for (const forbidden of [
       "out of 8",
@@ -195,6 +173,14 @@ describe("the Brevo request", () => {
     }
   });
 
+  it("escapes the link in the HTML body", async () => {
+    const calls = stubFetch();
+    await sendReturnLink("someone@example.test", "https://x.test/pack/a\"><script>alert(1)</script>");
+
+    const body = JSON.parse(calls[0].init.body as string);
+    expect(body.html).not.toContain("<script>");
+  });
+
   it("treats a provider error as a failure to send, never a silent success", async () => {
     stubFetch({ ok: false, status: 401 });
     expect(await sendReturnLink("someone@example.test", LINK)).toEqual({
@@ -205,18 +191,18 @@ describe("the Brevo request", () => {
   });
 
   it("carries the provider's own words, so a 401 can be diagnosed", async () => {
-    // Brevo's real response when the account has an IP allowlist enabled. A
-    // bare status here would send you looking at the API key, which is fine.
-    const brevoIpBlock = JSON.stringify({
-      message: "We have detected you are using an unrecognised IP address",
-      code: "unauthorized",
+    // A bare status sends you looking at the key, which may be fine. The
+    // response body is where the actual cause is named.
+    stubFetch({
+      ok: false,
+      status: 401,
+      body: JSON.stringify({ message: "API key is invalid", name: "validation_error" }),
     });
-    stubFetch({ ok: false, status: 401, body: brevoIpBlock });
 
     const result = await sendReturnLink("someone@example.test", LINK);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.detail).toContain("unrecognised IP address");
+      expect(result.detail).toContain("API key is invalid");
     }
   });
 
@@ -226,33 +212,5 @@ describe("the Brevo request", () => {
       ok: false,
       reason: "send-error",
     });
-  });
-
-  it("escapes the link in the HTML body", async () => {
-    const calls = stubFetch();
-    await sendReturnLink("someone@example.test", "https://x.test/pack/a\"><script>alert(1)</script>");
-
-    const body = JSON.parse(calls[0].init.body as string);
-    expect(body.htmlContent).not.toContain("<script>");
-  });
-});
-
-describe("the Resend request", () => {
-  it("uses a bearer token and Resend's own field names", async () => {
-    process.env.RESEND_API_KEY = "resend-key";
-    process.env.EMAIL_FROM = "sender@example.test";
-    const calls = stubFetch();
-
-    await sendReturnLink("someone@example.test", LINK);
-
-    expect(calls[0].url).toBe("https://api.resend.com/emails");
-    expect((calls[0].init.headers as Record<string, string>).Authorization).toBe(
-      "Bearer resend-key",
-    );
-
-    const body = JSON.parse(calls[0].init.body as string);
-    expect(body.from).toBe("sender@example.test");
-    expect(body.to).toEqual(["someone@example.test"]);
-    expect(body.text).toContain(LINK);
   });
 });
