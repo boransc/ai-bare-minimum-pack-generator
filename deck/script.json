@@ -1,0 +1,22 @@
+{
+  "1": {
+    "title": "What it is",
+    "text": "What I have built is a website that lets a small charity work out in about ten minutes, without speaking to anybody, whether it meets the basic standard for using AI safely, and then hands it the paperwork to fix whatever is missing. The content is not mine — it is The AI Bare Minimum Pack from Governance AI, which until now has been a Word document that this adapts to whoever is filling it in."
+  },
+  "2": {
+    "title": "The problem",
+    "text": "This is a real result from testing the live site, and it explains better than anything why this had to be a product rather than a quiz. Six points out of eight, seventy-five per cent, and yet the product tells that organisation in the first line on the page, above the score, that it does not meet the minimum, because two of those eight points are not like the other six. One of them asks whether you have written down what your staff must never type into an AI tool, the other asks whether a human being checks AI work before it reaches a client, and failing either one means the total simply stops mattering."
+  },
+  "3": {
+    "title": "Demo",
+    "text": "Rather than describe it, let me show you what an organisation actually sees. So that is the eight questions, the check, and then the pack, with the verdict coming first and the score second, their sector and size changing the wording but never the rules, and a policy carrying blanks they fill in here and we save, which they can take away as a Word file."
+  },
+  "4": {
+    "title": "The hardest decision",
+    "text": "The hardest decision was whether the AI should be allowed to write the policy at all, and there were only three answers available. Letting it write the whole pack is fast and completely unusable, because it invents obligations nobody wrote, and will happily tell a housing association it has thirty days to file a report that does not exist. Letting it write nothing is perfectly safe, but then every organisation gets an identical document they could already have downloaded for free. So what I did was fix the Pack's own words in place and let the AI write only in the three short passages that sit beside them, and the part I would defend hardest is that it cannot state a rule even if it tried, because there is nowhere for it to put one."
+  },
+  "5": {
+    "title": "Where it stands",
+    "text": "As for where it stands, the whole loop is live and I have watched every step of it run on the deployed site rather than on my laptop, but nobody has yet confirmed that my transcription of the Pack is faithful, and typing a document into code carefully is not the same thing as having it signed off. So until somebody does that, this is a working prototype rather than something you would put in front of the public. What I would do next is let an organisation take the check again in six months, so that a board can watch four out of eight become seven."
+  }
+}

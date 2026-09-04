@@ -25,6 +25,15 @@
  */
 
 const pptxgen = require("pptxgenjs");
+const fs = require("fs");
+const path = require("path");
+
+// The spoken script, shared with docs/presentation-script.md. One source of
+// truth on purpose: the notes and the written script drifted apart once
+// already, when slide 1 kept a paragraph the script had dropped.
+const SCRIPT = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "script.json"), "utf8"),
+);
 
 const INK = "172724";
 const INK_SOFT = "43534E";
@@ -103,9 +112,7 @@ s1.addText("Built on The AI Bare Minimum Pack.", {
 });
 
 slideNumber(s1, 1, MUTED);
-s1.addNotes(`A small charity can find out in ten minutes whether it meets the basic standard for using AI safely, and walk away with the paperwork to fix what is missing.
-
-The content is not mine. It is The AI Bare Minimum Pack, from Governance AI. It was a Word document. Now it is a website that adapts itself to whoever is filling it in.`);
+s1.addNotes(SCRIPT["1"].text);
 
 // ---------------------------------------------------------------------------
 // 2 — The problem. Large stat callout.
@@ -150,15 +157,7 @@ s2.addText("A score that flatters you is worse than no score at all.", {
 });
 
 slideNumber(s2, 2, MUTED);
-s2.addNotes(`A real result from testing the live site.
-
-Six out of eight. Seventy-five per cent.
-
-The product says the minimum is not met.
-
-Two of those eight points are not like the other six. One is whether you have written down what staff must never type into an AI tool. The other is whether a human checks AI work before it reaches a client. Fail either one and the total stops mattering. You do not meet the minimum, and the page says so above the score.
-
-That is why this is a product and not a quiz. A quiz would have told that organisation it got seventy-five per cent and left it feeling fine.`);
+s2.addNotes(SCRIPT["2"].text);
 
 // ---------------------------------------------------------------------------
 // 3 — Demo. Inverted: the one slide the room should look away from.
@@ -166,7 +165,7 @@ That is why this is a product and not a quiz. A quiz would have told that organi
 const s3 = pres.addSlide();
 s3.background = { color: FOREST };
 
-label(s3, "NINETY SECONDS", { color: MINT_SOFT, x: M, y: 0.75, w: 5 });
+label(s3, "ABOUT A MINUTE", { color: MINT_SOFT, x: M, y: 0.75, w: 5 });
 
 s3.addText("Live.", {
   isTextBox: true, x: M, y: 2.3, w: 8, h: 1.9, margin: 0,
@@ -184,9 +183,7 @@ s3.addText("ai-bare-minimum-pack-generator.vercel.app", {
 });
 
 slideNumber(s3, 3, MINT_SOFT);
-s3.addNotes(`Let me show you.
-
-Eight questions. The check. The pack. Verdict first, score second. Their sector and size change the wording, never the rules. The policy has blanks they fill in here and we save them, and it downloads as a Word file, because a locked PDF of a policy template is no use to anyone.`);
+s3.addNotes(SCRIPT["3"].text);
 
 // ---------------------------------------------------------------------------
 // 4 — The hardest decision. Comparison columns.
@@ -259,17 +256,7 @@ s4.addText(
 );
 
 slideNumber(s4, 4, MUTED);
-s4.addNotes(`The hardest question was whether to let the AI write the policy.
-
-Three options.
-
-Let it write the whole pack. Fast, and unusable. It invents obligations. It will tell a housing association it has thirty days to file a report that does not exist.
-
-Let it write nothing. Safe, and every organisation gets an identical document, which they can already get free.
-
-What I did instead is fix the Pack's words and let the AI write only in the margins. A paragraph describing their situation back to them. One realistic thing that could go wrong. One sentence for each point they failed.
-
-The part I would defend hardest is this. It cannot state a rule, because there is nowhere to put one. And everything it writes is checked before it reaches the page, against a list of things it must never mention. Laws. Regulators. Deadlines. Numbers. If a passage fails, the original text shows instead, and the reader never sees a gap.`);
+s4.addNotes(SCRIPT["4"].text);
 
 // ---------------------------------------------------------------------------
 // 5 — Where it stands.
@@ -333,11 +320,7 @@ s5.addText("Until the words are signed off, it is a working prototype.", {
 });
 
 slideNumber(s5, 5, MUTED);
-s5.addNotes(`What works. The whole loop is live, and I have watched every step run on the deployed site, not just on my laptop.
-
-What does not. Nobody has confirmed that my transcription of it is faithful. I typed that document into code carefully, and carefully is not signed off. Until someone does that, this is a working prototype.
-
-What next. Let an organisation take the check again in six months. That is how a board watches four out of eight become seven, and it is the only real reason anyone comes back.`);
+s5.addNotes(SCRIPT["5"].text);
 
 pres
   .writeFile({ fileName: "ai-minimum-five-minutes.pptx" })
