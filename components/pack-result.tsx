@@ -52,7 +52,7 @@ export function PackResult({
   // Tailoring is not part of the first paint. The model takes seconds, and the
   // pack is complete and correct without it, so it arrives afterwards and slots
   // in. If it never arrives, nothing is missing — only less personal.
-  const { tailoring: fetchedTailoring, status: tailoringStatus } = useTailoring(pack);
+  const { tailoring: fetchedTailoring, status: tailoringStatus } = useTailoring(pack, token);
 
   // A locally-held copy so a regenerated slot can update the page immediately
   // without waiting on (or re-triggering) useTailoring's own fetch. Synced

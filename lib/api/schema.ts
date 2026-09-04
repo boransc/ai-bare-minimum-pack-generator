@@ -85,3 +85,11 @@ export const generatePackRequest = z
   .strict();
 
 export type GeneratePackRequest = z.infer<typeof generatePackRequest>;
+
+/**
+ * Tailoring and re-tailoring work from the stored pack, so the only thing a
+ * caller supplies is which pack. The token's shape is checked separately by
+ * `isValidToken`; this just establishes that a string arrived and that nothing
+ * else did.
+ */
+export const tailorRequestSchema = z.object({ token: z.string() }).strict();

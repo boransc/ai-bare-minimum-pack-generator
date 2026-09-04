@@ -34,29 +34,22 @@ function requestKey(pack: GeneratedPack): string {
   return `${pack.createdAt}:${pack.contentVersion}`;
 }
 
-function requestTailoring(pack: GeneratedPack): Promise<TailoringResult | null> {
+/**
+ * The request carries only the token: the server reads the wizard and the
+ * assessment from the stored pack, so there is no second copy of the answers
+ * that could disagree with the stored one, and the result can be saved against
+ * the pack rather than generated afresh on every visit.
+ */
+function requestTailoring(pack: GeneratedPack, token: string): Promise<TailoringResult | null> {
   const key = requestKey(pack);
 
   const existing = inFlight.get(key);
   if (existing) return existing;
 
-  const body = {
-    orgName: pack.wizard.orgName,
-    sector: pack.wizard.sector,
-    size: pack.wizard.size,
-    currentAiUse: pack.wizard.currentAiUse,
-    aiUseTypes: pack.wizard.aiUseTypes,
-    sensitiveData: pack.wizard.sensitiveData,
-    regulated: pack.wizard.regulated,
-    consequentialDecisions: pack.wizard.consequentialDecisions,
-    boardOwner: pack.wizard.boardOwner,
-    answers: pack.answers,
-  };
-
   const request = fetch("/api/tailor", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ token }),
   })
     .then((response) => (response.ok ? response.json() : null))
     .then((data: { tailoring: TailoringResult | null } | null) => data?.tailoring ?? null)
@@ -83,7 +76,7 @@ function requestTailoring(pack: GeneratedPack): Promise<TailoringResult | null> 
  * A saved pack may already carry its tailoring, in which case there is nothing
  * to fetch and no reason to pay for text we already have.
  */
-export function useTailoring(pack: GeneratedPack): TailoringState {
+export function useTailoring(pack: GeneratedPack, token: string | undefined): TailoringState {
   const [state, setState] = useState<TailoringState>(() =>
     pack.tailoring
       ? { tailoring: pack.tailoring, status: "ready" }
@@ -92,10 +85,18 @@ export function useTailoring(pack: GeneratedPack): TailoringState {
 
   useEffect(() => {
     if (pack.tailoring) return;
+    // No token means no saved pack to tailor against. Not a real path today —
+    // the wizard always redirects to /pack/[token] — but the prop is optional,
+    // and leaving the state on "loading" would show a placeholder that never
+    // resolves. Settle on unavailable, which is what the page already handles.
+    if (!token) {
+      setState({ tailoring: null, status: "unavailable" });
+      return;
+    }
 
     let live = true;
 
-    requestTailoring(pack).then((tailoring) => {
+    requestTailoring(pack, token).then((tailoring) => {
       if (!live) return;
       setState(
         tailoring
@@ -110,7 +111,7 @@ export function useTailoring(pack: GeneratedPack): TailoringState {
     // The pack is fixed for the lifetime of this page; re-running on a new
     // object identity would only re-ask for the same answer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestKey(pack)]);
+  }, [requestKey(pack), token]);
 
   return state;
 }

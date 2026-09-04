@@ -1,7 +1,8 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { buildRegenerateMessages } from "./prompt";
 import {
   applyRegeneratedSlot,
+  hasModelText,
   regenerateRequestSchema,
   singleSlotCap,
   singleSlotJsonSchema,
@@ -223,5 +224,33 @@ describe("regenerateRequestSchema", () => {
     expect(
       regenerateRequestSchema.safeParse({ token: "abc", slot: "controlEmphasis", control: 9 }).success,
     ).toBe(false);
+  });
+});
+
+describe("hasModelText", () => {
+  const shell = (provenance: Record<string, "model" | "fallback">) =>
+    ({ slots: {}, provenance } as unknown as TailoringResult);
+
+  it("is false for null, so tailoring being switched off stores nothing", () => {
+    expect(hasModelText(null)).toBe(false);
+  });
+
+  it("is false when every slot fell back", () => {
+    expect(
+      hasModelText(shell({ openingContext: "fallback", riskScenario: "fallback" })),
+    ).toBe(false);
+  });
+
+  it("is true when even one slot carries model text", () => {
+    expect(
+      hasModelText(shell({ openingContext: "fallback", riskScenario: "model" })),
+    ).toBe(true);
+  });
+
+  // The regression this guards: /api/tailor hands back stored tailoring
+  // without calling the model, so persisting an all-fallback result would
+  // make one transient failure permanent for the life of the pack.
+  it("is false for an empty provenance map rather than vacuously true", () => {
+    expect(hasModelText(shell({}))).toBe(false);
   });
 });

@@ -22,6 +22,7 @@
 import "server-only";
 import { getJson, putJson, kvKeys, KvError } from "@/lib/cloudflare/kv";
 import type { GeneratedPack } from "@/lib/domain/pack";
+import type { TailoringResult } from "@/lib/domain/types";
 import { WIZARD_QUESTIONS } from "@/content/v1/wizard";
 import { applyRegeneratedSlot, type SlotSelector } from "@/lib/tailoring/schema";
 import { computeAccessExpiresAt, isAccessExpired, ttlSecondsRemaining } from "./packs-pure";
@@ -233,6 +234,47 @@ export async function saveTailoringSlot(
     ...existing,
     tailoring: applyRegeneratedSlot(existing.tailoring, selector, text),
   };
+
+  await putJson(kvKeys.pack(token), updated, {
+    expirationTtlSeconds: ttlSecondsRemaining(existing.createdAt, now),
+  });
+
+  return { status: "ok", pack: updated };
+}
+
+export type SaveTailoringResult =
+  | { status: "ok"; pack: StoredPack }
+  | { status: "not-found" }
+  | { status: "expired" };
+
+/**
+ * Store the tailored sentences against the pack.
+ *
+ * Without this, `pack.tailoring` stayed null in KV forever: /api/tailor
+ * generated the text, returned it to the page and forgot it. Two things were
+ * broken by that. `useTailoring` already said "a saved pack may already carry
+ * its tailoring, in which case there is nothing to fetch" — it never did, so
+ * every return visit paid for a fresh model call. And regenerate refuses to
+ * touch a pack with no stored tailoring, which made the feature unreachable
+ * in the real flow however well it worked in isolation.
+ *
+ * Same read-modify-write shape as the other writers, and the same TTL rule:
+ * recomputed from the record's original `createdAt`, so tailoring a pack does
+ * not extend its 12-month retention window.
+ */
+export async function saveTailoring(
+  token: string,
+  tailoring: TailoringResult,
+  now = new Date(),
+): Promise<SaveTailoringResult> {
+  const existing = await getJson<StoredPack>(kvKeys.pack(token));
+  if (!existing) return { status: "not-found" };
+
+  if (isAccessExpired(existing.accessExpiresAt, now)) {
+    return { status: "expired" };
+  }
+
+  const updated: StoredPack = { ...existing, tailoring };
 
   await putJson(kvKeys.pack(token), updated, {
     expirationTtlSeconds: ttlSecondsRemaining(existing.createdAt, now),

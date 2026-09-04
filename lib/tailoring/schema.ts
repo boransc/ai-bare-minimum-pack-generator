@@ -187,3 +187,19 @@ export function applyRegeneratedSlot(
     generatedAt: new Date().toISOString(),
   };
 }
+
+/**
+ * Does this result contain any actual model text?
+ *
+ * Gates persistence. A wholly-fallback result is the same static prose the page
+ * shows anyway, and storing it against the pack would be worse than storing
+ * nothing: the next visit would find stored tailoring, hand it straight back
+ * and never call the model again, freezing one transient failure into the
+ * pack's permanent state. The 30-day slot cache had this exact bug once.
+ */
+export function hasModelText(
+  tailoring: TailoringResult | null,
+): tailoring is TailoringResult {
+  if (!tailoring) return false;
+  return Object.values(tailoring.provenance).some((p) => p === "model");
+}
