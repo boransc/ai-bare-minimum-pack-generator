@@ -30,67 +30,60 @@ Put these in `.env.local`, and the same values in the Vercel project settings.
 | `APP_PASSCODE` | for `/admin` | You choose this. Unset means `/admin` refuses everything rather than opening. |
 | `TAILORING_ENABLED` | no | Set to `false` to serve deterministic packs only. No deploy needed. |
 | `EMAIL_FROM` | no | Sender address. Required for any email sending. On SMTP it must be `SMTP_USER`'s own address or a verified alias. |
-| `SMTP_HOST` `SMTP_USER` `SMTP_PASSWORD` | no | Turns on emailing the return link through a mailbox you already own. Preferred — see below. `SMTP_PORT` defaults to 465. All three must be set; a partial block is ignored. |
-| `BREVO_API_KEY` | no | Alternative sender. Verifies a single address, so no domain needed, but a new account waits in a manual review queue. |
-| `RESEND_API_KEY` | no | Alternative sender. Needs a verified sending *domain*. |
+| `SMTP_HOST` `SMTP_USER` `SMTP_PASSWORD` | no | Turns on emailing the return link. This is how email works here — see below. `SMTP_PORT` defaults to 465. All three must be set; a partial block is ignored. |
+| `RESEND_API_KEY` | no | Unused fallback adapter. Needs a verified sending *domain*, so it becomes the better option if Governance AI ever adds DNS records. |
+| `BREVO_API_KEY` | no | Unused. Kept only so the adapter is not silently undocumented — see below. |
 
-**On email.** Sending is optional and off until credentials exist; the page
-detects this on the server and never offers to send what it cannot send — it
-takes the address for Governance AI instead and says so.
+**On email.** Optional, and off until credentials exist. The page checks on the
+server and never offers to send what it cannot send — it takes the address for
+Governance AI instead, and says so. The message contains **the link and nothing
+else**: never the score, the verdict or the gaps.
 
-Three adapters, in the order they are preferred. The order is the result of
-finding out the hard way which of them can actually deliver to a stranger.
+Mail goes out through a mailbox Governance AI already owns. That needs no DNS
+change and nobody's approval: `governanceai.io` already receives mail, so its
+sender authentication already exists, and an authenticated submission from its
+own account inherits it. It runs on Google Workspace, so this is an
+[app password](https://support.google.com/accounts/answer/185833) on the sending
+account:
 
-**SMTP, through a mailbox the organisation already owns.** The shortest route
-and the default. It needs no DNS change and nobody's approval: the domain
-already receives mail, so its sender authentication already exists, and an
-authenticated submission from its own account inherits it. `governanceai.io`
-runs on Google Workspace, so this is an
-[app password](https://support.google.com/accounts/answer/185833) on the
-sending account — which needs 2-step verification enabled, and an
-administrator who has not disabled app passwords. Set `SMTP_HOST=smtp.gmail.com`,
-`SMTP_USER` to that mailbox, `SMTP_PASSWORD` to the app password, and
-`EMAIL_FROM` to the same address, because Google will only send as the
-authenticated user or a verified alias.
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=someone@governanceai.io
+SMTP_PASSWORD=the16charapppassword   # paste it without the spaces
+EMAIL_FROM=someone@governanceai.io   # must match SMTP_USER
+```
+
+The app password needs 2-step verification on the account, and a Workspace
+administrator who has not disabled app passwords. `EMAIL_FROM` has to be
+`SMTP_USER`'s own address or a verified alias, because Google will not send as
+anyone else.
 [Vercel blocks outbound port 25 but leaves 465 and 587 open](https://vercel.com/kb/guide/serverless-functions-and-smtp);
-the adapter defaults to 465 and fully awaits the send, which matters because
+the adapter defaults to 465 and fully awaits the send, which matters, because
 work still in flight when a serverless function returns is dropped.
 
-**[Brevo](https://developers.brevo.com/reference/sendtransacemail)** verifies a
-single sender *address* on its free tier (300/day), so no domain is needed. It
-was the original default and is no longer, because a new account is held behind
-a manual review — *"Your SMTP account is not yet activated. Please contact us at
-contact@brevo.com to request activation"* — with no published timeline. Nothing
-in this repo can bypass that, and an SMTP key will not either: Brevo calls the
-transactional service "SMTP" even over the REST API.
+```bash
+npm run email-check                                   # what is configured
+EMAIL_TO=you@example.com npm run email-check          # actually send one
+```
 
-**[Resend](https://resend.com)** needs a verified sending domain, which means
-DNS records on a domain you own. Its shared `onboarding@resend.dev` sender
-[only ever delivers to the account owner's own address](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain),
-so it is a demo, not a product.
+The check script reports the provider's own error rather than a generic
+failure, and names the likely cause — an ordinary password where an app
+password is needed, an app password pasted with its spaces, a blocked port, a
+from-address that is not the authenticated user.
 
-One trade-off worth stating whichever adapter is used: since the
-[2024 Gmail and Yahoo bulk sender rules](https://help.brevo.com/hc/en-us/articles/14925263522578-Comply-with-Gmail-Yahoo-and-Microsoft-s-requirements-for-email-senders),
-mail sent *from* an unauthenticated free address is routinely filtered to spam.
-Sending from `governanceai.io`'s own mailbox is what avoids that.
-
-Run `npm run email-check` to see what is configured, and
-`EMAIL_TO=you@example.com npm run email-check` to send a real message and have
-the provider's own error reported back.
-
-Two Brevo gates worth knowing about, both account settings rather than code:
-
-- **401** — an IP allowlist is enabled
-  (`app.brevo.com/security/authorised_ips`). Turn the restriction *off* rather
-  than adding a single address: serverless egress IPs change between
-  invocations, so an allowlist works on a laptop and fails in production.
-- **403, "account is not yet activated"** — Brevo holds new free accounts back
-  from transactional sending until they review them. Nothing here can bypass
-  it, and an SMTP key will not either: Brevo calls the service "SMTP" even over
-  the REST API, so the message is about the account, not the credential.
-
-Neither blocks the product. With sending unavailable the result page offers to
-take an address for Governance AI instead, and says exactly that.
+**Why not a hosted email API.** Both were tried first and neither can deliver
+to a stranger here. [Brevo](https://developers.brevo.com/reference/sendtransacemail)
+verifies a single sender address, so it needs no domain — but it holds new
+accounts behind a manual review with no published timeline, and the account
+here is still in it (*"Your SMTP account is not yet activated"*). Nothing in
+this repo can bypass that. [Resend](https://resend.com) needs a verified
+sending *domain*, and its shared `onboarding@resend.dev` sender
+[only ever delivers to the account owner's own address](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain) —
+a demo, not a product. Both adapters are still in `lib/email/send.ts` and are
+selected only if their key is set; SMTP takes precedence over both. If
+Governance AI adds DNS records later, Resend becomes the tidier choice and the
+switch is an environment variable.
 
 `CF_VECTORIZE_INDEX` is issued but deliberately unused — see [Decisions](#decisions-and-why).
 
@@ -98,7 +91,7 @@ take an address for Governance AI instead, and says exactly that.
 
 ```bash
 npm run dev              # dev server
-npm test                 # 94 tests, offline, no model calls
+npm test                 # 228 tests, offline, no model calls
 npm run build            # production build
 npm run tailoring-check  # live check against the real model, writes docs/tailoring-check.md
 npm run lint
@@ -111,12 +104,15 @@ npm run lint
 ```
 /                      landing
 /start                 8 context questions, then the 19-statement check
-POST /api/packs        scores it, saves it, returns a token          <- no model call
-/pack/[token]          the pack. The only result surface.
-POST /api/tailor       contextual sentences, fetched after paint     <- the model call
-POST /api/checklist    tick an action, persisted per token
-POST /api/email-link   optional, sends the link and nothing else
-/admin                 passcode-gated lead list
+POST /api/packs                scores it, saves it, returns a token   <- no model call
+/pack/[token]                  the pack. The only result surface.
+POST /api/tailor               contextual sentences, after paint      <- the model call
+POST /api/tailor/regenerate    redo one tailored passage              <- the model call
+POST /api/checklist            tick an action, persisted per token
+POST /api/document-fields      fill a bracket in Parts 3 and 4, saved
+GET  /api/download             Parts 3 and 4 as editable Word files
+POST /api/email-link           optional, sends the link and nothing else
+/admin                         passcode-gated lead list
 ```
 
 **Finding the admin page.** There is deliberately no link to it anywhere on the
@@ -137,6 +133,11 @@ and the tailored sentences slot in when they arrive, behind a quiet placeholder.
 The useful consequence is that **the fallback path is the default path**. If the model is slow, rate limited,
 switched off or broken, the user already has a correct and complete pack and simply never sees the extra
 sentences. Nothing is missing; it is only less personal.
+
+The tailored text is then **stored against the pack**, so coming back is instant rather than another twenty
+seconds, and a passage the visitor regenerated is the one they see next time. Only a result containing actual
+model text is stored: saving a wholly-fallback result would freeze one transient failure into the pack for
+good, because the next visit would find stored tailoring and never call the model again.
 
 ### One result surface
 
@@ -172,6 +173,12 @@ thresholds, named real organisations, markdown. Any slot failing any check is dr
 **4. A dropped slot falls back to source text.**
 Per slot, immediately, no retry — a boundary rejection is a policy failure, and retrying it teaches nothing.
 **The pack always renders. The worst case is less tailored, never wrong.**
+
+Regenerating one passage is the exception, and only because it has nowhere to fall back to: the visitor is
+already looking at text and has asked for different text. So it gets two attempts, the second at a lower
+temperature — the first runs hot to make the result genuinely different, and running hot is what makes it
+overrun the tightest character cap. If both attempts fail it says so and leaves the original in place.
+Nothing is loosened: both attempts pass the same validators.
 
 Model-written sentences carry a gold margin rule wherever they appear, and the pack says plainly which parts
 a model wrote.
@@ -258,8 +265,9 @@ route through the Cloudflare AI Gateway (`cf-aig-gateway-id: default`) for loggi
   page says so.
 - Links expire **90 days** after creation. Returning does not slide that.
 - Saved packs are deleted after **12 months**, enforced by the KV TTL itself rather than a flag we have to
-  remember to check. A checklist write recomputes the remaining TTL from the original `createdAt`, so ticking
-  a box moves toward the same deletion instant instead of resetting a fresh year.
+  remember to check. Every write — a checklist tick, a filled bracket, a regenerated passage, an email
+  request — recomputes the remaining TTL from the original `createdAt`, so using a pack moves toward the same
+  deletion instant instead of resetting a fresh year.
 - Pack routes are `noindex`, `referrer: no-referrer`. The token never appears in a title or an analytics
   event.
 - **Nothing sensitive is asked.** Every wizard answer is a fixed option; the only free-text field is the
@@ -299,12 +307,11 @@ slot is another validation surface, another prompt to tune, another fallback to 
 2. **Re-assessment over time**, so an organisation can show a board it moved from 4/8 to 7/8. The data model
    already supports it; only the history UX is missing. This is also the strongest reason for someone to
    return.
-3. **Editable Word versions of the policy and staff note.** Their own instructions say to fill in the
-   bracketed fields and issue them, which a PDF cannot do.
-4. **Per-section regenerate**, for when one section's tailoring misses.
-5. **Move the lead list to D1** when it needs real querying — same platform, actual SQL.
-6. **Watch the validator rejection rate** in production. It is the early warning that tailoring is drifting,
-   and right now nobody is watching it.
+3. **Watch the validator rejection rate** in production. It is the early warning that tailoring is drifting,
+   and right now nobody is watching it. Rejections are recorded per pack; they need surfacing.
+4. **Move the lead list to D1** when it needs real querying — same platform, actual SQL.
+5. **A real privacy notice.** The lifetimes and the lead capture are disclosed in-page; there is no notice
+   page, and someone has to decide whether in-page wording is enough.
 
 ---
 
@@ -316,6 +323,8 @@ lib/domain/        Scoring, checklist ordering, pack assembly. Pure, no I/O.
 lib/tailoring/     Source map, prompt, schema, validators, fallbacks, cache.
 lib/cloudflare/    KV and Workers AI over REST, via the AI Gateway.
 lib/storage/       Tokens, saved packs, retention, the lead index.
+lib/email/         The return-link sender. SMTP, plus two unused adapters.
+lib/export/        Parts 3 and 4 as editable Word documents.
 app/               Routes. components/ holds the client pieces.
 scripts/           The tailoring check and the model probe.
 docs/spec/         Product and technical spec, and the one-page client version.

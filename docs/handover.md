@@ -13,7 +13,9 @@ into something an organisation can complete in ten minutes. They answer eight qu
 about themselves, work through the eight-point AI Minimum Standard at the level of its
 19 sub-statements, and get a dated verdict, their specific gaps, a thirty-day plan, the
 policy and staff note, a checklist they can return to, and a route into the Full
-Playbook. No account, no login — a personal unguessable link is the only way back.
+Playbook. The bracketed fields in the policy and the staff note are fillable in the page
+and saved, and both download as editable Word documents. No account, no login — a
+personal unguessable link is the only way back.
 
 ---
 
@@ -40,7 +42,10 @@ most likely to get "improved" by someone who thinks 7/8 should look encouraging.
 **4. Parts 3 and 4 are canonical.** The policy template and staff note are instruments an
 organisation adopts as its own. No tailoring touches them. The only substitution is
 deterministic population of bracketed fields where the user actually gave a value —
-every other bracket stays visible for them to complete.
+every other bracket stays visible for them to complete. The Word export in
+`lib/export/` follows the same rule and must keep doing so: it never invents a value for
+an empty bracket, and it escapes everything it interpolates, because that document
+leaves the product and gets circulated.
 
 **5. `content/v1/` is Karl's words.** Changing a string there changes what the product
 tells organisations to do. It is a content decision for Governance AI, not a code
@@ -84,7 +89,9 @@ lib/domain/        Scoring, checklist ordering, pack assembly. Pure functions, n
 lib/tailoring/     Source map, prompt, schema, validators, fallbacks, KV cache.
 lib/cloudflare/    KV and Workers AI over REST, via the AI Gateway.
 lib/storage/       Tokens, saved packs, retention, the lead index.
-lib/email/         Provider-agnostic sender (Brevo, Resend).
+lib/email/         The return-link sender. SMTP is the live path; two REST
+                   adapters (Resend, Brevo) sit behind it, unused.
+lib/export/        Parts 3 and 4 as editable Word documents. Pure string builders.
 app/               Routes. components/ holds the client pieces.
 scripts/           The tailoring check and the model probe. Both opt-in, both cost money.
 docs/spec/         Product and technical spec, plus the one-page client version.
@@ -117,18 +124,49 @@ an in-memory window that is per-instance, not global.
 **The admin lead list** is at `/admin`, reachable only by typing the URL — there is
 deliberately no link to it from the public site. Sign in with `APP_PASSCODE`.
 
-**Email** sends via Brevo when `BREVO_API_KEY` and `EMAIL_FROM` are set. As of handover
-Brevo has not activated the account for transactional sending, so it is off, and the UI
-correctly offers to take an address rather than promising a send it cannot make. Run
-`npm run email-check` to see the current state, and `EMAIL_TO=you@example.com npm run
-email-check` to attempt a real send and get the provider's own error back.
+**Email** goes out over SMTP, through a Governance AI mailbox. Set `SMTP_HOST`,
+`SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM` (see the README for the exact values) and
+it works; leave them unset and the UI correctly offers to take an address rather than
+promising a send it cannot make. Run `npm run email-check` for the current state, and
+`EMAIL_TO=you@example.com npm run email-check` to attempt a real send and get the
+provider's own error back.
+
+The route matters, because two more obvious ones are dead ends. Brevo needs no domain but
+holds new accounts behind a manual review with no timeline, and this account is still in
+it. Resend needs DNS records on a domain we do not control, and its shared test sender
+only ever delivers to the account owner's own address. Sending through a mailbox the
+organisation already owns needs neither: the domain already receives mail, so its sender
+authentication already exists. Both REST adapters are still in `lib/email/send.ts` and
+activate only if their key is set — SMTP takes precedence. **A half-filled SMTP block is
+deliberately ignored** rather than selected, so someone midway through setup cannot
+shadow a working key and fail every send.
+
+If Governance AI ever adds DNS records for a sending domain, Resend becomes the tidier
+choice and the switch is an environment variable, not a code change.
+
+---
+
+## The deployed instance
+
+<https://ai-bare-minimum-pack-generator.vercel.app>
+
+Verified end to end against production, not just locally: the eight-question wizard
+walked as a browser user, pack creation, tailoring, regenerate, the Word downloads,
+document fields, the checklist, persistence across a reload, rate limiting with
+`Retry-After`, and the security headers (production CSP carries no `unsafe-eval`;
+`/pack/:token` sends `Referrer-Policy: no-referrer`). `docs/audit-deployed.md` records
+what was observed, and `docs/audit-requirements.md` maps the build against the brief.
+
+Two things there have never been exercised and are honest gaps: a genuinely expired pack
+(the `410` branches), and a physical handset — the mobile measurements are real but come
+from an emulated viewport.
 
 ---
 
 ## Verifying it still works
 
 ```bash
-npm test                 # 120+ tests, offline, no model calls, no credentials needed
+npm test                 # 228 tests, offline, no model calls, no credentials needed
 npm run build
 npm run tailoring-check  # live: 5 organisations through the real production path (~5 model calls)
 npm run email-check      # reports email configuration; add EMAIL_TO to actually send
@@ -147,6 +185,24 @@ you probably have not changed what you think you changed.
 
 ## Traps I hit, so you do not have to
 
+- **A green test suite is not evidence that a feature works.** This is the one to
+  actually absorb. Per-section regenerate shipped with 21 passing tests, a clean build
+  and a passing suite, and was broken for *every* real pack on production: it 404s on a
+  pack with no stored tailoring, and `/api/tailor` generated the tailored text, returned
+  it to the page and never saved it. The tests passed because they built a stored pack
+  that already had tailoring — a state nothing in the product produced. The suite was
+  self-consistent and wrong about the world. Before believing a feature works, exercise
+  it against the deployed instance with a pack made by the wizard.
+- **Sampling temperature interacts with the character caps.** `openingContext` allows 350
+  characters against `riskScenario`'s 600, and regeneration runs hot on purpose so the
+  new text differs from the old. Hot plus tightest cap meant it overran and was rejected
+  roughly two times in three. Two attempts now, the second cooler. If you add a slot with
+  a tight cap, expect the same and do not solve it by loosening the validator.
+- **A touch target is not the thing you can see.** The checklist checkbox is 15px because
+  that is the right visual weight in a document meant to look printed. It carries a
+  44x44 hit area under `(pointer: coarse)` via a wrapper, so the target grew and the
+  decoration did not. Measure targets on a coarse pointer, not in a resized desktop
+  window.
 - **Workers AI has no single reply envelope.** `@cf/openai/gpt-oss-120b` answers
   OpenAI-style (`result.choices[0].message.content`); Llama models use
   `result.response`. Reading the wrong field makes a working model look like a transport
@@ -177,12 +233,12 @@ you probably have not changed what you think you changed.
 1. **Get content sign-off.** Nothing else matters until the transcription is verified.
 2. **Re-assessment over time** (CR-1 in `docs/change-requests.md`). The strongest reason
    for anyone to come back, and the data model already supports it.
-3. **Editable Word versions of Parts 3 and 4** (CR-2). Their own instructions say to
-   fill in the brackets and issue them; a PDF cannot be filled in.
-4. **Per-section regenerate.** Partly built — `regeneratedFrom` exists on the record —
-   but there is no endpoint or UI.
-5. **Watch the validator rejection rate.** It is the early warning that tailoring is
+3. **Watch the validator rejection rate.** It is the early warning that tailoring is
    drifting, and nobody is currently watching it. Rejections are recorded per pack; they
    need surfacing in the admin health view.
-6. **Move the lead list to D1** if it ever needs real querying. Same platform, actual
+4. **Test the expired-pack path.** Every endpoint has a `410` branch for a pack past 90
+   days, and not one of them has ever run — there is no non-destructive way to age a
+   record. It is the same shape of risk as the regenerate bug below: a branch that only
+   the tests have ever visited.
+5. **Move the lead list to D1** if it ever needs real querying. Same platform, actual
    SQL. Do not reach for Postgres.
