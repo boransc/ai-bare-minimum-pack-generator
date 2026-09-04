@@ -65,3 +65,7 @@ docs/examples/
 
 # content-check working file (source text is deliberately not committed)
 .source-text.json
+
+# Deck render artefacts (regenerate with deck/build-pptx.js)
+deck/slide-*.jpg
+deck/*.pdf
