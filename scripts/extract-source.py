@@ -1,5 +1,5 @@
 """
-Pull the plain text out of Karl's Pack so the transcription can be checked
+Pull the plain text out of the source Pack so the transcription can be checked
 against it.
 
 Writes .source-text.json (gitignored) for scripts/content-check.test.ts to read.

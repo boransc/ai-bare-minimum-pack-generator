@@ -1,6 +1,6 @@
 # Client questions, and the answers we got
 
-**To:** Karl and Fred · **From:** Boran · **Re:** AI Bare Minimum Pack Generator
+**To:** Governance AI · **From:** Boran · **Re:** AI Bare Minimum Pack Generator
 
 The brief said it was deliberately incomplete, so here is one batched message rather
 than twenty pings. Questions are grouped by what they actually change in the build.
@@ -39,7 +39,7 @@ instruments an organisation adopts and issues as its own, not explanatory prose.
 > the value. Sector-specific examples belong in explanatory areas, never in the policy
 > or staff note themselves.
 
-**Q. Should a generated risk scenario replace Karl's worked examples (Deloitte, West
+**Q. Should a generated risk scenario replace the Pack's worked examples (Deloitte, West
 Midlands Police) or sit beside them?**
 
 > **A.** Alongside. Never replacing.
@@ -155,4 +155,4 @@ the original?** Every generated document inherits it, so it needs a named owner.
    treatment is provisional and flagged as needing sign-off.
 4. **Should model-written sentences be visibly marked in the pack?** Built as yes
    (italic, with a caption), because it seemed the safer default for a governance
-   product carrying Karl's name.
+   product carrying Governance AI's name.

@@ -1,6 +1,6 @@
 # AI Bare Minimum Pack Generator
 
-Karl George's **AI Bare Minimum Pack** is a Word document. This turns it into a public web product: an
+The **AI Bare Minimum Pack** is a Word document. This turns it into a public web product: an
 organisation answers a few questions, completes the eight-point AI Minimum Standard, and gets a version of
 the pack written for its own situation — on a personal link, with no account and no login.
 
@@ -237,7 +237,7 @@ changes emphasis and explanation, never position — the model is never shown a 
 rationalise.
 
 One thing the transcription surfaced: **the source's thirty-day table never schedules point 6.** We have not
-invented a week for it. Worth raising with Karl.
+invented a week for it. Worth raising with Governance AI.
 
 ---
 
@@ -304,7 +304,7 @@ slot is another validation surface, another prompt to tune, another fallback to 
 ## What I would do with another month
 
 1. **Get the content signed off.** The transcription in `content/v1/` has been done carefully and reviewed,
-   but not yet verified as faithful by Karl or Governance AI. Every generated pack inherits it. This is the
+   but not yet verified as faithful by Governance AI. Every generated pack inherits it. This is the
    one genuine blocker to a public launch.
 2. **Re-assessment over time**, so an organisation can show a board it moved from 4/8 to 7/8. The data model
    already supports it; only the history UX is missing. This is also the strongest reason for someone to

@@ -1,6 +1,6 @@
 # Friday presentation — 10 minutes
 
-For Karl and Fred. The brief asks for: the demo, the lead list, the tailoring check
+For the client review. The brief asks for: the demo, the lead list, the tailoring check
 results, and what I would do with another month.
 
 Timings are deliberate. The temptation is to spend nine minutes on the build and one on
@@ -10,7 +10,7 @@ the thinking; the interesting part is the other way round.
 
 ## 0:00–0:30 · What it is
 
-> Karl's Bare Minimum Pack is a Word document. It is now a public web product. An
+> The AI Bare Minimum Pack is a Word document. It is now a public web product. An
 > organisation answers eight questions, works the eight-point Standard, and gets a dated
 > verdict, its specific gaps, the four documents, a checklist it can return to, and a
 > route into the Playbook. No account, no login.
@@ -61,7 +61,7 @@ Then the point that matters:
 
 > Those two are also the Playbook triggers. An organisation with no board owner and AI in
 > consequential decisions is not a cold lead — the product has already told them they
-> have a problem, in Karl's own words, and shown them the fuller review is where it gets
+> have a problem, in the source's own words, and shown them the fuller review is where it gets
 > answered.
 
 Note the passcode, and that there is deliberately no link to this page from the public
@@ -95,7 +95,7 @@ Then how, briefly — four layers, each assuming the last failed:
    name is captured but deliberately never sent
 3. everything coming back is checked for named laws, regulators, obligation modals,
    dates, thresholds
-4. anything failing is dropped and Karl's own words stand in its place
+4. anything failing is dropped and the source's own words stand in its place
 
 > The failure mode is always "less tailored", never "wrong". And the check asserts on
 > every model-authored sentence, so this cannot regress quietly.
@@ -125,7 +125,7 @@ Then the three that matter, from `docs/change-requests.md`:
 >
 > **Editable Word versions of the policy and staff note.** Their own instruction is "fill
 > in the bracketed fields, approve it, issue it." A PDF cannot be filled in, so people
-> will retype it, and a retyped policy drifts from Karl's wording immediately.
+> will retype it, and a retyped policy drifts from the source wording immediately.
 >
 > **A one-page board summary.** Point 1 fails for most organisations because nobody has
 > anything to put in front of the board. The full pack is the working document; this

@@ -76,7 +76,7 @@ function escapeHtml(value: string): string {
 function substituteBrackets(text: string, orgName: string | null, fields: Record<string, string>): string {
   // The literal prose between brackets is escaped too. It comes from
   // content/v1, so this is not a security boundary — it is a correctness one:
-  // the day someone adds "R&D" or "<24 hours" to Karl's policy, an unescaped
+  // the day someone adds "R&D" or "<24 hours" to the policy text, an unescaped
   // segment would render as a broken entity in Word and nobody would notice
   // until a client opened the document.
   //

@@ -6,7 +6,7 @@ Two reference documents were supplied for context only:
 
   * Nehemiah_AI_Governance_Playbook_2.docx — ANOTHER CLIENT'S board pack,
     marked "Confidential". None of its facts, figures, roles or conclusions may
-    appear in this product. Karl's own master prompt is explicit: "Do not copy
+    appear in this product. The Full Playbook master prompt is explicit: "Do not copy
     facts, risks, roles, strategic pillars, numbers, regulations or conclusions
     from any previous client example."
   * karl-master-prompt.md — the Full Playbook methodology, which defines the
@@ -18,7 +18,7 @@ them without anyone noticing. This check exists because that failure would be
 invisible in review and serious if shipped: another organisation's confidential
 board detail, on a public marketing site.
 
-Terms are only reported when they do NOT also appear in Karl's Bare Minimum
+Terms are only reported when they do NOT also appear in the Bare Minimum
 Pack. "ISO 42001", "EU AI Act" and "AI Transparency Index" all legitimately
 appear in the Pack, so finding them in the product is correct, not a leak.
 
@@ -143,13 +143,13 @@ def main() -> int:
         "product?",
         "",
         "`Nehemiah_AI_Governance_Playbook_2.docx` is **another client's board pack**,",
-        "marked Confidential. Karl's master prompt is explicit: *\"Do not copy facts,",
+        "marked Confidential. The Full Playbook master prompt is explicit: *\"Do not copy facts,",
         "risks, roles, strategic pillars, numbers, regulations or conclusions from any",
         "previous client example.\"* `karl-master-prompt.md` describes the Full Playbook —",
         "the tier above this product — so its vocabulary appearing here would mean the",
         "scope boundary has drifted.",
         "",
-        "A term is only reported if it does **not** also appear in Karl's Bare Minimum",
+        "A term is only reported if it does **not** also appear in the Bare Minimum",
         "Pack. `ISO 42001`, `EU AI Act` and `AI Transparency Index` are all legitimately",
         "in the Pack, so finding them in the product is correct.",
         "",
@@ -180,7 +180,7 @@ def main() -> int:
             if legitimate:
                 lines.append(
                     f"- `{term}` — {len(hits)} occurrence(s), but this term also appears "
-                    "in Karl's Bare Minimum Pack, so it is legitimate."
+                    "in the Bare Minimum Pack, so it is legitimate."
                 )
                 continue
 
@@ -205,7 +205,7 @@ def main() -> int:
             lines.append("")
 
         if not found_any:
-            lines.append("Nothing found that is not also in Karl's own Pack.")
+            lines.append("Nothing found that is not also in the source Pack.")
             lines.append("")
 
     lines.append("## Result")

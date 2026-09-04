@@ -107,7 +107,7 @@
 
 /* --------------------------------------------------------------------------
    Model-written text. A gold margin rule marks every sentence a model wrote,
-   so the reader can always tell Karl's words from generated ones.
+   so the reader can always tell the source's words from generated ones.
    -------------------------------------------------------------------------- */
 
 /* Model-written passages are marked by voice, not by a coloured panel: italic

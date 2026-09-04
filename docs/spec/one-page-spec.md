@@ -11,7 +11,7 @@ Governance AI's existing eight-point **AI Minimum Standard**. It receives immedi
 - the specific sub-points it does not yet evidence
 - a tailored version of **The AI Bare Minimum Pack** — the eight-point check, the starter guidance note,
   the AI usage policy template and the staff note
-- a checklist it can return to, following Karl's own thirty-day plan
+- a checklist it can return to, following the Pack's own thirty-day plan
 - a printable / downloadable pack, with the policy and staff note as editable documents
 - a personal return link
 - a clear pathway into Governance AI's full governance of AI review

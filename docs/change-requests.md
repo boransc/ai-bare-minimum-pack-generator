@@ -1,6 +1,6 @@
 # Change requests
 
-**To:** Karl and Fred · **From:** Boran
+**To:** Governance AI · **From:** Boran
 
 Five proposals, pitched properly: what, why, and roughly what it costs. Say yes or park
 them. None of these are in the brief; all of them came out of building the thing.
@@ -48,7 +48,7 @@ with the bracketed fields intact.
 fields, approve it, issue it, collect acknowledgements." A PDF cannot be filled in. At
 the moment we hand someone a beautiful read-only version of a document whose entire
 purpose is to be edited and adopted as their own, which quietly guarantees they will
-retype it — and a retyped policy is one that drifts from Karl's wording immediately.
+retype it — and a retyped policy is one that drifts from the source wording immediately.
 This is the difference between the pack being admired and the pack being used.
 
 **Cost.** Half a day, most of it in making the generated document look like Governance

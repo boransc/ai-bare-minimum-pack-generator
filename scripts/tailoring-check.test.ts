@@ -130,7 +130,7 @@ describe.skipIf(!LIVE)("tailoring check", () => {
       const sections: string[] = [];
       // Collected separately from the markdown: the source column legitimately
       // names the ICO and quotes real cases, so asserting over the whole report
-      // would fail on Karl's own words.
+      // would fail on the source's own words.
       const modelAuthored: string[] = [];
       let modelSlots = 0;
       let fallbackSlots = 0;

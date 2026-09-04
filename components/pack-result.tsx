@@ -333,7 +333,7 @@ export function PackResult({
           <p className="lede">
             Adopt this as your own. Fill in the bracketed fields, approve it at a
             meeting, issue it to everyone, and collect acknowledgements. The
-            wording is Karl&rsquo;s and is reproduced unchanged.
+            wording is the Pack&rsquo;s own and is reproduced unchanged.
           </p>
           <PolicyDocument
             orgName={pack.orgName}
@@ -391,8 +391,8 @@ export function PackResult({
       <section className="section-block transparency-note">
         <h3 className="h3">How this pack was made.</h3>
         <p>
-          The eight points, the scoring, the policy and the staff note are Karl
-          George&rsquo;s work, reproduced unchanged.{" "}
+          The eight points, the scoring, the policy and the staff note are
+          reproduced unchanged from The AI Bare Minimum Pack.{" "}
           <TailoringStatusNote tailoring={tailoring} status={tailoringStatus} />{" "}
           The result reflects what you told us about your own organisation; nothing
           here has been independently verified.

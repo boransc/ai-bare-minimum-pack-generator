@@ -145,10 +145,10 @@ Plus *find out* items generated from wizard "don't know" answers.
 |---|---|---|---|
 | `openingContext` | Result page top + pack cover; 2–3 sentences | ~350 ch | generic source opener |
 | `perControlEmphasis[1..8]` | One sentence under each control | ~200 ch each | omitted; source text stands alone |
-| `riskScenario` | **Alongside** Karl's Deloitte / West Midlands Police examples, never replacing them | ~600 ch | source examples only |
+| `riskScenario` | **Alongside** the Pack's own worked examples, never replacing them | ~600 ch | source examples only |
 | `sectorDataExamples` | Makes control 4's never-list concrete; 3–5 bullets | 5 × ~80 ch | source never-list only |
 | `thirtyDayFraming` | Frames the plan for their size/capacity | ~250 ch | source framing |
-| `nextStepRationale` | Why the top items are first, **in Karl's sequence**, in their language | ~300 ch | deterministic sentence from the gap list |
+| `nextStepRationale` | Why the top items are first, **in the source's sequence**, in their language | ~300 ch | deterministic sentence from the gap list |
 
 **Excluded from tailoring entirely:** Part 3 (policy template) and Part 4 (staff note). They are instruments
 the organisation adopts and issues as its own. The only substitution there is **deterministic population of

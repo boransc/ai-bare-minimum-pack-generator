@@ -8,7 +8,7 @@ without me in the room.
 
 ## What this is, in one paragraph
 
-A public web product that turns Karl George's AI Bare Minimum Pack from a Word document
+A public web product that turns The AI Bare Minimum Pack from a Word document
 into something an organisation can complete in ten minutes. They answer eight questions
 about themselves, work through the eight-point AI Minimum Standard at the level of its
 19 sub-statements, and get a dated verdict, their specific gaps, a thirty-day plan, the
@@ -47,7 +47,7 @@ every other bracket stays visible for them to complete. The Word export in
 an empty bracket, and it escapes everything it interpolates, because that document
 leaves the product and gets circulated.
 
-**5. `content/v1/` is Karl's words.** Changing a string there changes what the product
+**5. `content/v1/` is the source's words.** Changing a string there changes what the product
 tells organisations to do. It is a content decision for Governance AI, not a code
 change.
 
@@ -59,7 +59,7 @@ The product runs. It is not signed off. Three things stand between it and a publ
 launch, and none of them are engineering:
 
 1. **Content sign-off.** The transcription in `content/v1/` was done carefully and
-   reviewed internally, but has NOT been verified as faithful by Karl or Governance AI.
+   reviewed internally, but has NOT been verified as faithful by Governance AI.
    Every generated pack inherits it, so a transcription error becomes an error in every
    document the product ever produces. This is the real blocker.
 2. **Brand sign-off.** No logo, colour or tone guide was ever supplied. The current
@@ -76,7 +76,7 @@ launch, and none of them are engineering:
 ## One open client question
 
 **Does returning to a saved pack extend the 90-day link expiry, or is it fixed from
-creation?** Built as fixed. One sentence from Karl or Fred settles it; the change is a
+creation?** Built as fixed. One sentence from Governance AI settles it; the change is a
 few lines in `lib/storage/packs.ts` if the answer is "it should slide".
 
 ---
@@ -84,7 +84,7 @@ few lines in `lib/storage/packs.ts` if the answer is "it should slide".
 ## Where things live
 
 ```
-content/v1/        Karl's Pack as structured data. Canonical. Sign-off required.
+content/v1/        The Pack as structured data. Canonical. Sign-off required.
 lib/domain/        Scoring, checklist ordering, pack assembly. Pure functions, no I/O.
 lib/tailoring/     Source map, prompt, schema, validators, fallbacks, KV cache.
 lib/cloudflare/    KV and Workers AI over REST, via the AI Gateway.
