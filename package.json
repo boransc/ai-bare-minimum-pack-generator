@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "tailoring-check": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run scripts/tailoring-check.test.ts",
     "email-check": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run scripts/email-check.test.ts",
-    "content-check": "python scripts/extract-source.py && vitest run scripts/content-check.test.ts"
+    "content-check": "python scripts/extract-source.py && vitest run scripts/content-check.test.ts",
+    "contamination-check": "python scripts/extract-source.py && python scripts/contamination-check.py"
   },
   "dependencies": {
     "next": "16.3.4",
