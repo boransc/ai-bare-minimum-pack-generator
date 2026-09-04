@@ -62,3 +62,6 @@ docs/examples/
 !.yarn/versions
 *.pem
 .pnpm-debug.log*
+
+# content-check working file (source text is deliberately not committed)
+.source-text.json

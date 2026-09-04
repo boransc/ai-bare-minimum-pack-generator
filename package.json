@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "tailoring-check": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run scripts/tailoring-check.test.ts",
-    "email-check": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run scripts/email-check.test.ts"
+    "email-check": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run scripts/email-check.test.ts",
+    "content-check": "python scripts/extract-source.py && vitest run scripts/content-check.test.ts"
   },
   "dependencies": {
     "next": "16.3.4",

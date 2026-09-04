@@ -71,6 +71,20 @@ export function DocumentFieldsProvider({
   // Pending debounce timers, one per field.
   const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
+  /**
+   * A monotonic write counter per field, so a slow response cannot undo a
+   * faster one that came after it.
+   *
+   * Two requests for the same field really can be in flight together: type,
+   * pause long enough for the autosave to fire, keep typing, then blur before
+   * the next autosave timer elapses. Nothing about that is adversarial. If the
+   * first response then arrives second — ordinary network reordering — its
+   * handler would otherwise write the OLDER value over the newer one, and the
+   * error path would revert to a value the visitor had already replaced. Only
+   * the most recent write for a field is allowed to apply its result.
+   */
+  const seqRef = useRef<Record<string, number>>({});
+
   const setValue = useCallback((fieldId: string, rawValue: string) => {
     setValues((current) => ({ ...current, [fieldId]: rawValue }));
 
@@ -101,6 +115,10 @@ export function DocumentFieldsProvider({
       setError(null);
       savedRef.current = { ...savedRef.current, [fieldId]: trimmed };
 
+      const mySeq = (seqRef.current[fieldId] ?? 0) + 1;
+      seqRef.current[fieldId] = mySeq;
+      const isStale = () => seqRef.current[fieldId] !== mySeq;
+
       fetch("/api/document-fields", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,6 +132,10 @@ export function DocumentFieldsProvider({
           return (await response.json()) as { fields: Record<string, string> };
         })
         .then((body) => {
+          // A newer write for this field has already been sent; its answer is
+          // the one that counts.
+          if (isStale()) return;
+
           // Trust the server's own record of this field over our optimistic
           // guess -- it is the one that trims and clears on empty.
           const serverValue = body.fields?.[fieldId] ?? "";
@@ -121,6 +143,10 @@ export function DocumentFieldsProvider({
           setValues((current) => applyFieldValue(current, fieldId, serverValue));
         })
         .catch((err: unknown) => {
+          // Do not revert on behalf of a superseded write: the value it would
+          // restore is one the visitor has already typed past.
+          if (isStale()) return;
+
           savedRef.current = { ...savedRef.current, [fieldId]: previouslySaved };
           setValues((current) => ({ ...current, [fieldId]: previouslySaved }));
           setError(
