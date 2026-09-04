@@ -249,3 +249,60 @@ export const FIND_OUT_ACTIONS: Partial<
 /** The wizard's own promise to the user, shown before the first question. */
 export const WIZARD_PROMISE =
   "Eight questions, all multiple choice, about a minute. We never ask for anything confidential, and nothing you enter here changes your score.";
+
+// ---------------------------------------------------------------------------
+// Turning stored answers back into the words the visitor actually chose.
+//
+// Lives here rather than in lib/storage, which is server-only: the saved pack
+// shows the declared context to the visitor as part of its dated record, and
+// the admin lead list shows the same answers to Governance AI. Both need these
+// labels, so they are derived once from WIZARD_QUESTIONS. A second, hand-kept
+// table would drift the moment an option is renamed.
+// ---------------------------------------------------------------------------
+
+export type AnswerField = (typeof WIZARD_QUESTIONS)[number]["id"];
+
+/** Shown wherever an answer is missing or unrecognised, never a raw enum. */
+export const NOT_RECORDED = "Not recorded";
+
+const ANSWER_LABELS: Record<string, Record<string, string>> = Object.fromEntries(
+  WIZARD_QUESTIONS.map((q) => [
+    q.id,
+    Object.fromEntries(q.options.map((o) => [o.value, o.label])),
+  ]),
+);
+
+/**
+ * A single-select answer as its label.
+ *
+ * Records saved before a field existed hold `undefined`, and a value matching
+ * no known option — a hand-edited row, or a content change that dropped an
+ * option — must not leak its raw enum ("dont-know") into the page. Both
+ * degrade to NOT_RECORDED.
+ */
+export function answerLabel(
+  field: AnswerField,
+  value: string | null | undefined,
+): string {
+  if (value == null) return NOT_RECORDED;
+  return ANSWER_LABELS[field]?.[value] ?? NOT_RECORDED;
+}
+
+/** A multi-select answer (aiUseTypes) as a readable list. Same degrade rule. */
+export function answerLabels(
+  field: AnswerField,
+  values: string[] | null | undefined,
+): string {
+  if (!values || values.length === 0) return NOT_RECORDED;
+  const labels = values.map((v) => ANSWER_LABELS[field]?.[v]);
+  if (labels.some((label) => label === undefined)) return NOT_RECORDED;
+  return labels.join(", ");
+}
+
+/** The eight questions in order, for rendering a declared-context summary. */
+export const ANSWER_FIELDS: AnswerField[] = WIZARD_QUESTIONS.map((q) => q.id);
+
+/** The question text, so a summary can label each answer with what was asked. */
+export const QUESTION_LABELS: Record<string, string> = Object.fromEntries(
+  WIZARD_QUESTIONS.map((q) => [q.id, q.overline]),
+);

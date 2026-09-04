@@ -12,6 +12,7 @@
  */
 
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { AI_MODEL, tailoringEnabled } from "@/lib/cloudflare/config";
 import { describeFailure, extractJson, runChat } from "@/lib/cloudflare/workers-ai";
 import { getJson, kvKeys, putJson } from "@/lib/cloudflare/kv";
@@ -25,13 +26,31 @@ import type {
   WizardAnswers,
 } from "@/lib/domain/types";
 import { tailoringCacheKey } from "./cache-key";
-import { buildTailoringMessages } from "./prompt";
-import { controlEmphasisKeys, slotsJsonSchema, SLOT_CAPS, SlotsSchema } from "./schema";
+import { buildRegenerateMessages, buildTailoringMessages } from "./prompt";
+import {
+  controlEmphasisKeys,
+  singleSlotCap,
+  singleSlotJsonSchema,
+  SingleSlotSchema,
+  slotsJsonSchema,
+  SLOT_CAPS,
+  SlotsSchema,
+  type SlotSelector,
+} from "./schema";
 import { validateSlotText } from "./validate";
 import { FALLBACK_OPENING_CONTEXT, FALLBACK_RISK_SCENARIO } from "./fallback";
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
 const RETRY_MAX_TOKENS = 4000;
+
+/**
+ * Higher than first generation's 0.3. First generation wants the steadiest
+ * reading of the source; a regenerate request is explicitly "give me a
+ * different attempt", and a higher temperature is the actual mechanism for
+ * that — the nonce in the prompt gives it something new to vary around, but
+ * sampling variance is what makes the variation happen at all.
+ */
+const REGENERATE_TEMPERATURE = 0.9;
 
 export interface TailorInput {
   wizard: WizardAnswers;
@@ -189,4 +208,94 @@ function buildResult(
     model: anySlotFromModel ? AI_MODEL : null,
     generatedAt: new Date().toISOString(),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Regenerate: one slot, on demand.
+// ---------------------------------------------------------------------------
+
+export type RegenerateResult = { ok: true; text: string } | { ok: false; reason: string };
+
+/**
+ * Regenerate exactly one slot, through the same prompt builder, the same
+ * JSON schema shape and the same layer-2 validators as first generation —
+ * `buildRegenerateMessages` shares every context block and source excerpt
+ * with `buildTailoringMessages`, and the result below is run through
+ * `validateSlotText` with the identical cap. A failure here falls back
+ * exactly as first generation does: the caller keeps whatever text it had
+ * before, nothing is invented, and nothing is written anywhere.
+ *
+ * Deliberately bypasses the KV cache in both directions. It never reads it —
+ * a cache hit would hand back the exact text the visitor just asked to
+ * replace, so the button would appear to do nothing. And it never writes to
+ * it: a regenerated slot is one visitor's reroll, not a better answer for
+ * the next visitor who lands on the same wizard/assessment pairing. Writing
+ * it back would let one person's reroll change what a stranger sees for the
+ * rest of the cache's 30-day TTL, which is precisely the poisoning the brief
+ * warned against — only now self-inflicted instead of caused by a transient
+ * error.
+ */
+export async function regenerateSlot(
+  input: TailorInput,
+  selector: SlotSelector,
+): Promise<RegenerateResult> {
+  if (!tailoringEnabled()) {
+    return { ok: false, reason: "tailoring is not enabled" };
+  }
+
+  const unmetControls = input.assessment.controls.filter((c) => !c.met).map((c) => c.number);
+
+  if (selector.slot === "controlEmphasis" && !unmetControls.includes(selector.control)) {
+    // Guards against a stale request naming a control the stored assessment
+    // no longer calls unmet — there is nothing to emphasise, and asking the
+    // model anyway would mean grounding it in a control we are not showing it.
+    return { ok: false, reason: "that control is not currently unmet" };
+  }
+
+  try {
+    return await regenerateUnsafe(input.wizard, unmetControls, selector);
+  } catch {
+    return { ok: false, reason: "regeneration threw unexpectedly" };
+  }
+}
+
+async function regenerateUnsafe(
+  wizard: WizardAnswers,
+  unmetControls: ControlNumber[],
+  selector: SlotSelector,
+): Promise<RegenerateResult> {
+  const nonce = randomUUID();
+  const messages = buildRegenerateMessages(wizard, unmetControls, selector, nonce);
+  const jsonSchema = singleSlotJsonSchema(selector);
+
+  let reply = await runChat(messages, { jsonSchema, temperature: REGENERATE_TEMPERATURE });
+
+  if (!reply.ok && (reply.failure.kind === "truncated" || reply.failure.kind === "malformed")) {
+    reply = await runChat(messages, {
+      jsonSchema,
+      temperature: REGENERATE_TEMPERATURE,
+      maxTokens: RETRY_MAX_TOKENS,
+    });
+  }
+
+  if (!reply.ok) {
+    return { ok: false, reason: `model call failed: ${describeFailure(reply.failure)}` };
+  }
+
+  const extracted = extractJson(reply.value);
+  if (!extracted.ok) {
+    return { ok: false, reason: `extractJson: ${extracted.reason}` };
+  }
+
+  const parsed = SingleSlotSchema.safeParse(extracted.value);
+  if (!parsed.success) {
+    return { ok: false, reason: `schema validation failed: ${parsed.error.message.slice(0, 200)}` };
+  }
+
+  const verdict = validateSlotText(parsed.data.value, singleSlotCap(selector));
+  if (!verdict.ok) {
+    return { ok: false, reason: verdict.reason ?? "invalid" };
+  }
+
+  return { ok: true, text: parsed.data.value };
 }

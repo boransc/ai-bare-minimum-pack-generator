@@ -18,7 +18,7 @@
  */
 
 import { z } from "zod";
-import type { ControlNumber } from "@/lib/domain/types";
+import type { ControlNumber, TailoringResult } from "@/lib/domain/types";
 
 export const SLOT_CAPS = {
   openingContext: 350,
@@ -83,4 +83,107 @@ export function controlEmphasisKeys(
     if (expected.includes(n)) result[n] = value;
   }
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Regenerate: one slot, not the whole set.
+//
+// Deliberately kept in this file (no "server-only" import anywhere above)
+// rather than lib/tailoring/index.ts, because both a server route and the
+// client component that renders the regenerate button need the same
+// definition of "which slot" and the same merge logic for applying a
+// regenerated slot's text back into a TailoringResult. index.ts pulls in
+// server-only modules (Workers AI, KV) that must never reach the browser
+// bundle, so the shared, side-effect-free pieces live here instead.
+// ---------------------------------------------------------------------------
+
+/**
+ * Which single slot to redo. The discriminated union is the whole point: it
+ * is impossible to construct a `controlEmphasis` selector without a control
+ * number, and impossible to attach one to `openingContext` or `riskScenario`.
+ */
+export type SlotSelector =
+  | { slot: "openingContext" }
+  | { slot: "riskScenario" }
+  | { slot: "controlEmphasis"; control: ControlNumber };
+
+/** The `provenance`/`rejections` key a selector corresponds to. */
+export function slotSelectorKey(selector: SlotSelector): string {
+  return selector.slot === "controlEmphasis"
+    ? `controlEmphasis.${selector.control}`
+    : selector.slot;
+}
+
+export function singleSlotCap(selector: SlotSelector): number {
+  return SLOT_CAPS[selector.slot];
+}
+
+/**
+ * The JSON Schema for a single-slot regeneration call. Same restricted
+ * keyword set as `slotsJsonSchema` (Workers AI's grammar engine has no
+ * `propertyNames`), just for an object with one named string property
+ * instead of three.
+ */
+export function singleSlotJsonSchema(selector: SlotSelector): Record<string, unknown> {
+  return {
+    type: "object",
+    properties: {
+      value: { type: "string", maxLength: singleSlotCap(selector) },
+    },
+    required: ["value"],
+    additionalProperties: false,
+  };
+}
+
+export const SingleSlotSchema = z.object({ value: z.string() });
+
+/**
+ * Merge one regenerated slot's text into an existing `TailoringResult`.
+ *
+ * Pure and shared: the regenerate endpoint uses it to build what gets
+ * persisted, and the client uses the identical function to update the page
+ * optimistically once the endpoint confirms success, so the two can never
+ * disagree about what "regenerating riskScenario" means.
+ */
+/**
+ * The regenerate endpoint's request shape. Lives here rather than in the
+ * route file so the offline test suite can exercise it directly without
+ * pulling in anything that imports "server-only" (route.ts -> lib/tailoring
+ * -> Workers AI / KV), and so the route and any future caller share one
+ * definition of "which slot names and control pairings are even legal".
+ */
+export const regenerateRequestSchema = z
+  .object({
+    token: z.string(),
+    slot: z.enum(["openingContext", "riskScenario", "controlEmphasis"]),
+    control: z.number().int().min(1).max(8).optional(),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      value.slot === "controlEmphasis" ? value.control !== undefined : value.control === undefined,
+    { message: "control is required for controlEmphasis and must be absent otherwise" },
+  );
+
+export function applyRegeneratedSlot(
+  tailoring: TailoringResult,
+  selector: SlotSelector,
+  text: string,
+): TailoringResult {
+  const slotKey = slotSelectorKey(selector);
+
+  return {
+    ...tailoring,
+    slots:
+      selector.slot === "controlEmphasis"
+        ? {
+            ...tailoring.slots,
+            controlEmphasis: { ...tailoring.slots.controlEmphasis, [selector.control]: text },
+          }
+        : { ...tailoring.slots, [selector.slot]: text },
+    provenance: { ...tailoring.provenance, [slotKey]: "model" },
+    // The slot just succeeded, so any earlier fallback reason no longer applies.
+    rejections: tailoring.rejections.filter((r) => r.slot !== slotKey),
+    generatedAt: new Date().toISOString(),
+  };
 }

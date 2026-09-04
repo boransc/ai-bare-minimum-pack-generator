@@ -23,6 +23,7 @@ import "server-only";
 import { getJson, putJson, kvKeys, KvError } from "@/lib/cloudflare/kv";
 import type { GeneratedPack } from "@/lib/domain/pack";
 import { WIZARD_QUESTIONS } from "@/content/v1/wizard";
+import { applyRegeneratedSlot, type SlotSelector } from "@/lib/tailoring/schema";
 import { computeAccessExpiresAt, isAccessExpired, ttlSecondsRemaining } from "./packs-pure";
 
 export {
@@ -184,6 +185,53 @@ export async function saveDocumentField(
     ...existing,
     documentFields: fields,
     documentFieldsUpdatedAt: now.toISOString(),
+  };
+
+  await putJson(kvKeys.pack(token), updated, {
+    expirationTtlSeconds: ttlSecondsRemaining(existing.createdAt, now),
+  });
+
+  return { status: "ok", pack: updated };
+}
+
+export type SaveTailoringSlotResult =
+  | { status: "ok"; pack: StoredPack }
+  | { status: "not-found" }
+  | { status: "expired" }
+  /** The record predates tailoring, or tailoring never produced anything for
+   *  it — there is no `TailoringResult` shell to merge one slot into, and
+   *  fabricating one here would invent a `generatedAt`/`model` history that
+   *  never happened. */
+  | { status: "no-tailoring" };
+
+/**
+ * Persist one regenerated tailoring slot against the saved pack.
+ *
+ * Same read-modify-write shape as `saveChecklistState`, same TTL rule: the
+ * TTL is recomputed from the record's original `createdAt`, never from
+ * `now`, so asking for a section to be redone does not quietly extend the
+ * 12-month retention window. `applyRegeneratedSlot` (lib/tailoring/schema.ts)
+ * does the actual merge, shared with the client's optimistic update so the
+ * two can never disagree about what changed.
+ */
+export async function saveTailoringSlot(
+  token: string,
+  selector: SlotSelector,
+  text: string,
+  now = new Date(),
+): Promise<SaveTailoringSlotResult> {
+  const existing = await getJson<StoredPack>(kvKeys.pack(token));
+  if (!existing) return { status: "not-found" };
+
+  if (isAccessExpired(existing.accessExpiresAt, now)) {
+    return { status: "expired" };
+  }
+
+  if (!existing.tailoring) return { status: "no-tailoring" };
+
+  const updated: StoredPack = {
+    ...existing,
+    tailoring: applyRegeneratedSlot(existing.tailoring, selector, text),
   };
 
   await putJson(kvKeys.pack(token), updated, {

@@ -66,6 +66,14 @@ export function StaffNoteDocument({
         <p className="doc-kind">Part 4</p>
         <h1 className="doc-title">{STAFF_NOTE_TITLE}</h1>
         <p className="doc-standfirst">{STAFF_NOTE_STANDFIRST}</p>
+        {token && (
+          <a
+            className="doc-download-link no-print"
+            href={`/api/download?token=${encodeURIComponent(token)}&doc=staff-note`}
+          >
+            Download as a Word document
+          </a>
+        )}
         <DocumentFieldsStatus fieldIds={STAFF_NOTE_FIELD_IDS} />
       </header>
 

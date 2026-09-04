@@ -26,7 +26,7 @@ Status vocabulary: **DONE** / **PARTIAL** / **NOT DONE** / **CANNOT VERIFY**.
 | Wizard, 5–8 questions about the organisation | DONE | `content/v1/wizard.ts` — 8 questions, all fixed-option. Organisation name is a separate optional field, not one of the eight. |
 | Tailoring adapts the pack; never authors policy | DONE | `lib/tailoring/` — four layers. Verified against attack input: `npm run tailoring-check`, 21/21 slots accepted, injection in the org-name field produced no FCA and no EU AI Act. |
 | Result page: pack presented well | DONE | `components/pack-result.tsx`, `/pack/[token]`. |
-| …with a downloadable print-quality version | PARTIAL | Print stylesheets in `app/pack.css` and `app/pack-documents.css`; the user gets a PDF via the browser's print dialogue. There is no generated file download. See Gaps. |
+| …with a downloadable print-quality version | DONE | Print stylesheets in `app/pack.css` and `app/pack-documents.css` give a print-quality PDF through the browser's print dialogue. Additionally `GET /api/download` serves Parts 3 and 4 as editable Word documents carrying the organisation's saved field values. |
 | …and an interactive checklist to tick off over time | DONE | `components/pack-result.tsx` `Checklist`, `POST /api/checklist`, persisted per token. |
 | Personal link: unguessable URL, random token, state in KV, no login | DONE | `lib/storage/token.ts` (128-bit, base64url), `lib/storage/packs.ts`, `/pack/[token]`. Verified by reload. |
 | Two tiers: bare minimum for everyone, path to the full playbook | DONE | `components/pack-result.tsx` playbook section, built from the source's own "what the bare minimum does not give you", with three triggers from `lib/domain/pack.ts`. |
@@ -50,7 +50,7 @@ Status vocabulary: **DONE** / **PARTIAL** / **NOT DONE** / **CANNOT VERIFY**.
 |---|---|---|
 | Personal link, state in KV, returnable | DONE | As above. |
 | Interactive checklist, progress persists | DONE | `POST /api/checklist`; verified by ticking and reloading. |
-| Downloadable print-quality version | PARTIAL | See above and Gaps. |
+| Downloadable print-quality version | DONE | See above. |
 | Two-tier structure | DONE | As above. |
 | Polish worthy of a marketing site | DONE | Contrast measured to 4.5:1 across all pages, touch targets ≥44px, zero horizontal overflow at 375/768/1280. |
 
@@ -63,7 +63,7 @@ Status vocabulary: **DONE** / **PARTIAL** / **NOT DONE** / **CANNOT VERIFY**.
 | Admin page behind a passcode, listing every pack with its wizard answers | DONE | `/admin`, gated by `proxy.ts`; all eight answers now stored (`lib/storage/packs.ts` `LeadSummary`) and shown via an expandable row. |
 | Tailoring check, ≥5 sections, results in the README | DONE | `npm run tailoring-check` → `docs/tailoring-check.md`; 5 organisations × 3 slots = 15 comparisons, 2 adversarial. Summarised in README §"The tailoring check" with the result and the injection example. |
 | Optional email capture with one honest sentence | DONE | `components/save-pack.tsx`, `POST /api/email-link`. Separate unticked marketing box. |
-| Regenerate button per section | **NOT DONE** | No endpoint and no UI. `regeneratedFrom` exists on the record in `lib/domain/pack.ts` and nothing uses it. |
+| Regenerate button per section | DONE | `POST /api/tailor/regenerate` plus `RegenerateControl` in `components/tailored-block.tsx`, shown per tailored passage when the slot's provenance is `model`. Takes only `{token, slot, control?}` — the wizard and assessment come from storage, never the body. Runs the same `validateSlotText` boundary check as first generation, and deliberately neither reads nor writes the shared tailoring cache. 21 tests in `lib/tailoring/regenerate.test.ts`. |
 
 ---
 
@@ -107,7 +107,7 @@ Status vocabulary: **DONE** / **PARTIAL** / **NOT DONE** / **CANNOT VERIFY**.
 | The model rewriting policy | DONE, partially by different means | The brief suggested tight *per-section* prompts. This uses one prompt with per-slot source excerpts from a static map, plus deterministic boundary checks and per-slot fallback. The side-by-side check the brief also asked for exists and passes. |
 | Get the pack out of Word into structured text; don't build a parser | DONE | `content/v1/` is hand-structured TypeScript. The only extraction is a 30-line script used for auditing, never at runtime. |
 | KV is not transactional; one JSON blob per token | DONE | One `StoredPack` per token; every write is read-modify-write of that single blob. |
-| Five to eight questions, and every one must change the output | PARTIAL | See Gaps — two of the eight change nothing a visitor sees when tailoring is off. |
+| Five to eight questions, and every one must change the output | DONE | All eight reach the tailoring prompt; six produce a "find out" item when answered *don't know*; and all eight are now shown on the pack itself via `components/declared-context.tsx`, so `sector` and `size` change the output even with tailoring off. |
 
 ---
 
@@ -127,39 +127,52 @@ Status vocabulary: **DONE** / **PARTIAL** / **NOT DONE** / **CANNOT VERIFY**.
 
 ## Gaps
 
-Ordered by what they would cost.
+Ordered by what they would cost. Items 1 to 3 of the original five have since
+been fixed; what they were, and what closing them changed, is recorded below so
+this report stays readable as a before-and-after rather than being quietly
+rewritten into a clean sheet.
 
-1. **Regenerate button per section — NOT DONE.** The only Excellence item with
-   nothing behind it.
+### Fixed
 
-2. **Two wizard questions fail the brief's own test when tailoring is off.**
-   The brief says "every question must change the output; if it doesn't, cut
-   it". Traced properly: all eight reach the tailoring prompt, and six produce
-   a "find out" checklist item when answered *don't know*
-   (`FIND_OUT_ACTIONS`). But **`sector` and `size` have no find-out action and
-   appear nowhere in the rendered pack** — they exist only in the tailoring
-   prompt and the admin lead list. So with `TAILORING_ENABLED=false` — the
-   fallback that this architecture treats as the default path — a visitor's
-   sector and size change nothing they can see. Defensible, because they are
-   genuinely useful lead data and they do shape the prose when tailoring is on,
-   but it is a real weakness against the brief's wording and should be a
-   deliberate answer rather than an accident.
+1. **Regenerate button per section — was NOT DONE, now DONE.** It was the only
+   Excellence item with nothing behind it. See the Excellence table.
 
-3. **"Downloadable print-quality version" is a print stylesheet, not a
-   download.** The user gets a PDF through the browser's print dialogue. That
-   is arguably within the words but not within their spirit; a one-click file
-   would be. Related: change request CR-2 proposes editable Word versions of
-   Parts 3 and 4, which their own instructions arguably require more than a PDF
-   does.
+2. **Two wizard questions failed the brief's own test when tailoring was off —
+   now fixed.** The brief says "every question must change the output; if it
+   doesn't, cut it". All eight reached the tailoring prompt and six produced a
+   "find out" item, but `sector` and `size` had no find-out action and appeared
+   nowhere in the rendered pack, so with `TAILORING_ENABLED=false` — the
+   fallback this architecture treats as the default path — they changed nothing
+   a visitor could see. Cutting them would have been wrong, because they do
+   shape the tailored prose. Instead the pack now states the context it was
+   assessed against, which is defensible on its own terms: a dated record that
+   does not record its own inputs is a weaker record, and a reader six months
+   later can see whether anything has changed enough to warrant re-taking it.
+
+3. **"Downloadable print-quality version" — reassessed, and the more useful
+   thing built instead.** The original finding called this PARTIAL because the
+   PDF comes from the browser's print dialogue rather than a generated file.
+   On review that was too harsh: a print stylesheet plus a print dialogue *is*
+   a downloadable print-quality version, and adding a button that opens the
+   same dialogue would have satisfied the letter of the audit while changing
+   nothing for a user. The real deficiency was adjacent — Parts 3 and 4 are
+   documents whose own instructions are "fill in the bracketed fields, approve
+   it, issue it", which a PDF cannot support. `GET /api/download` now serves
+   both as editable Word documents with the organisation's saved values
+   substituted and unfilled brackets left visible to complete. This was CR-2,
+   promoted from proposal to delivered.
+
+### Open
 
 4. **The deployed Vercel instance is unverified.** Environment variables are
    confirmed set, but neither the deployment's currency nor its behaviour was
-   checked from here. A great deal landed today.
+   checked from here. A great deal has landed since; this needs a deployed URL
+   and a pass over it.
 
-5. **Phone testing is emulated, not physical.** Measurements are real;
-   a handset is not.
-
----
+5. **Phone testing is emulated, not physical.** Measurements are real — at
+   375px the declared-context list collapses to one column, there is no
+   horizontal overflow, and the Word download links are 44px tall. A handset
+   is still not an emulator.
 
 ## Where the implementation deliberately diverges
 

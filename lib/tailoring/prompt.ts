@@ -12,7 +12,7 @@ import type { ChatMessage } from "@/lib/cloudflare/workers-ai";
 import type { ControlNumber, WizardAnswers } from "@/lib/domain/types";
 import { CONTROLS_BY_NUMBER } from "@/content/v1/controls";
 import { SHARED_SOURCE_EXCERPT, controlSourceExcerpt } from "./source-map";
-import { SLOT_CAPS } from "./schema";
+import { SLOT_CAPS, type SlotSelector } from "./schema";
 
 const SYSTEM = `You are helping contextualise a fixed governance document for one organisation.
 
@@ -92,6 +92,67 @@ export function buildTailoringMessages(
     `ORGANISATION CONTEXT:\n${contextBlock(wizard)}`,
     organisationNameBlock(wizard.orgName),
     `${SLOT_SPEC}${unmetControls.join(", ")}.`,
+  ].join("\n\n");
+
+  return [
+    { role: "system", content: SYSTEM },
+    { role: "user", content: user },
+  ];
+}
+
+/**
+ * Same instruction, same context blocks, same source excerpts as
+ * `buildTailoringMessages` — regeneration must not become a second, looser
+ * way to ask the model for policy text. The only differences: the source
+ * material is trimmed to what the one requested slot may draw on (the
+ * shared excerpt for the two prose slots, or just the one control's excerpt
+ * for `controlEmphasis`, exactly as first generation would have shown it),
+ * and the spec at the end asks for one named value instead of the full
+ * three-slot object.
+ */
+function regenerateSlotSpec(selector: SlotSelector): string {
+  switch (selector.slot) {
+    case "openingContext":
+      return (
+        `Return exactly this JSON shape and nothing else:\n` +
+        `{ "value": "2-3 sentences, max ${SLOT_CAPS.openingContext} characters, describing this organisation's situation back to them" }`
+      );
+    case "riskScenario":
+      return (
+        `Return exactly this JSON shape and nothing else:\n` +
+        `{ "value": "max ${SLOT_CAPS.riskScenario} characters, one concrete plausible way this goes wrong in an organisation like this one" }`
+      );
+    case "controlEmphasis":
+      return (
+        `Return exactly this JSON shape and nothing else:\n` +
+        `{ "value": "max ${SLOT_CAPS.controlEmphasis} characters, one sentence on why control ${selector.control} matters here" }`
+      );
+  }
+}
+
+export function buildRegenerateMessages(
+  wizard: WizardAnswers,
+  unmetControls: ControlNumber[],
+  selector: SlotSelector,
+  nonce: string,
+): ChatMessage[] {
+  const sourceMaterial =
+    selector.slot === "controlEmphasis"
+      ? `Control ${selector.control} source: ${controlSourceExcerpt(selector.control)}`
+      : SHARED_SOURCE_EXCERPT;
+
+  const user = [
+    `SOURCE MATERIAL (the only basis you may use):\n${sourceMaterial}`,
+    `CONTROLS THIS ORGANISATION DOES NOT YET MEET:\n${controlBlock(unmetControls)}`,
+    `ORGANISATION CONTEXT:\n${contextBlock(wizard)}`,
+    organisationNameBlock(wizard.orgName),
+    regenerateSlotSpec(selector),
+    // A fresh, meaningless token, not part of the context and carrying no
+    // instruction — appended purely so a repeat "regenerate" click is not a
+    // deterministic no-op against the exact same prompt text. The real
+    // sampling change is the higher temperature the caller passes to
+    // `runChat`; this just gives it something new to vary around.
+    `(internal regeneration id, ignore, carries no meaning: ${nonce})`,
   ].join("\n\n");
 
   return [

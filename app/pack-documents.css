@@ -38,6 +38,24 @@
   margin: 16px 0 0;
 }
 
+.doc-download-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 16px 0 0;
+  font: 500 14px var(--sans);
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.doc-download-link:hover,
+.doc-download-link:focus-visible {
+  color: var(--ink);
+  text-decoration-color: var(--green);
+}
+
 /* --------------------------------------------------------------------------
    Sections
    -------------------------------------------------------------------------- */

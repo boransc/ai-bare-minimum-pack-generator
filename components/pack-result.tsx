@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CONTENT_VERSION_LABEL } from "@/content/v1";
 import { CONTROLS_BY_NUMBER } from "@/content/v1/controls";
 import {
@@ -16,12 +16,14 @@ import { scoreContradictsVerdict } from "@/lib/domain/assessment";
 import { whatToDoFirst } from "@/lib/domain/checklist";
 import { displayName, type GeneratedPack } from "@/lib/domain/pack";
 import { useTailoring } from "./use-tailoring";
-import { TailoredBlock, TailoringStatusNote } from "./tailored-block";
+import { RegenerateControl, TailoredBlock, TailoringStatusNote } from "./tailored-block";
 import { SavePack } from "./save-pack";
 import { PolicyDocument } from "./policy-document";
 import { StaffNoteDocument } from "./staff-note-document";
 import { DocumentFieldsProvider } from "./document-fields-context";
-import type { ChecklistItem } from "@/lib/domain/types";
+import { DeclaredContext } from "./declared-context";
+import { applyRegeneratedSlot } from "@/lib/tailoring/schema";
+import type { ChecklistItem, TailoringResult } from "@/lib/domain/types";
 
 interface PackResultProps {
   pack: GeneratedPack;
@@ -50,7 +52,18 @@ export function PackResult({
   // Tailoring is not part of the first paint. The model takes seconds, and the
   // pack is complete and correct without it, so it arrives afterwards and slots
   // in. If it never arrives, nothing is missing — only less personal.
-  const { tailoring, status: tailoringStatus } = useTailoring(pack);
+  const { tailoring: fetchedTailoring, status: tailoringStatus } = useTailoring(pack);
+
+  // A locally-held copy so a regenerated slot can update the page immediately
+  // without waiting on (or re-triggering) useTailoring's own fetch. Synced
+  // whenever the fetch produces a new object — first arrival, or a fresh
+  // mount with a different pack — but never overwritten by it afterwards, so
+  // a regenerate result is not clobbered by a stale in-flight request.
+  const [tailoring, setTailoring] = useState<TailoringResult | null>(fetchedTailoring);
+  useEffect(() => {
+    if (fetchedTailoring) setTailoring(fetchedTailoring);
+  }, [fetchedTailoring]);
+
   const met = assessment.verdict === "met";
   const name = displayName(pack);
   const first = whatToDoFirst(checklist);
@@ -118,6 +131,18 @@ export function PackResult({
         caption="Written for your organisation."
         text={tailoring?.slots.openingContext}
         status={tailoringStatus}
+        regenerate={
+          token && tailoring?.provenance.openingContext === "model"
+            ? {
+                token,
+                selector: { slot: "openingContext" },
+                onRegenerated: (text) =>
+                  setTailoring((current) =>
+                    current ? applyRegeneratedSlot(current, { slot: "openingContext" }, text) : current,
+                  ),
+              }
+            : undefined
+        }
       />
 
       {/* Save and return --------------------------------------------------- */}
@@ -151,6 +176,8 @@ export function PackResult({
         <div className="control-results">
           {assessment.controls.map((control) => {
             const emphasis = tailoring?.slots.controlEmphasis?.[control.number];
+            const emphasisIsModel =
+              tailoring?.provenance[`controlEmphasis.${control.number}`] === "model";
             return (
               <article
                 key={control.number}
@@ -173,7 +200,28 @@ export function PackResult({
                       </span>
                     </h3>
                     <p>{control.summary}</p>
-                    {emphasis && <p className="tailored-inline">{emphasis}</p>}
+                    {emphasis && (
+                      <p className="tailored-inline">
+                        {emphasis}
+                        {token && emphasisIsModel && (
+                          <RegenerateControl
+                            token={token}
+                            selector={{ slot: "controlEmphasis", control: control.number }}
+                            onRegenerated={(text) =>
+                              setTailoring((current) =>
+                                current
+                                  ? applyRegeneratedSlot(
+                                      current,
+                                      { slot: "controlEmphasis", control: control.number },
+                                      text,
+                                    )
+                                  : current,
+                              )
+                            }
+                          />
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -217,6 +265,18 @@ export function PackResult({
           text={tailoring?.slots.riskScenario}
           status={tailoringStatus}
           variant="scenario"
+          regenerate={
+            token && tailoring?.provenance.riskScenario === "model"
+              ? {
+                  token,
+                  selector: { slot: "riskScenario" },
+                  onRegenerated: (text) =>
+                    setTailoring((current) =>
+                      current ? applyRegeneratedSlot(current, { slot: "riskScenario" }, text) : current,
+                    ),
+                }
+              : undefined
+          }
         />
       </section>
 
@@ -320,6 +380,9 @@ export function PackResult({
         </div>
         <p className="playbook-outro">{WHAT_THE_BARE_MINIMUM_DOES_NOT_GIVE_YOU.outro}</p>
       </section>
+
+      {/* The record -------------------------------------------------------- */}
+      <DeclaredContext wizard={pack.wizard} />
 
       {/* Transparency ------------------------------------------------------ */}
       <section className="section-block transparency-note">

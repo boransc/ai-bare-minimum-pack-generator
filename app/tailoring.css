@@ -36,3 +36,58 @@
     display: none;
   }
 }
+
+/**
+ * Regenerate control: a quiet correction affordance sitting inside the
+ * caption line of the passage it redoes, not a standalone widget. It reads
+ * as understated text with an underline, using the same muted ink as the
+ * caption around it — no button chrome, no colour, nothing that competes
+ * with the governance document it sits inside.
+ */
+.regenerate-button {
+  font: inherit;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  /* 44px minimum touch target on coarse pointers without visually growing the
+     text: the hit area extends via padding while the box stays inline. */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.regenerate-button:hover,
+.regenerate-button:focus-visible {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
+.regenerate-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+  text-decoration: none;
+}
+
+.regenerate-button:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.regenerate-error {
+  display: block;
+  color: var(--red);
+  font: 400 normal 13px/1.5 var(--sans);
+  margin-top: 4px;
+}
+
+@media print {
+  .regenerate,
+  .regenerate-error {
+    display: none;
+  }
+}

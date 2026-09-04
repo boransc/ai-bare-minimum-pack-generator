@@ -34,8 +34,15 @@ version, since scores stop being comparable if the controls themselves change.
 
 ## CR-2 · Editable Word versions of the policy and the staff note
 
-**What.** Alongside the print/PDF view, offer Parts 3 and 4 as `.docx` downloads with
-the bracketed fields intact.
+**Status: DELIVERED.** Built rather than pitched, because a requirements audit found the
+"downloadable print-quality version" was a print stylesheet and nothing else, and this
+was the more useful thing to build against that finding. `GET /api/download?token=…&doc=policy|staff-note`
+serves each part as a Word-openable document carrying the organisation's saved field
+values. Unfilled brackets stay visible so they can be completed in Word. The cost
+estimate below turned out to be roughly right; the library did not prove necessary.
+
+**What.** Alongside the print/PDF view, offer Parts 3 and 4 as editable Word downloads
+with the bracketed fields intact.
 
 **Why.** The source's own instruction for these two documents is "fill in the bracketed
 fields, approve it, issue it, collect acknowledgements." A PDF cannot be filled in. At
@@ -45,8 +52,9 @@ retype it — and a retyped policy is one that drifts from Karl's wording immedi
 This is the difference between the pack being admired and the pack being used.
 
 **Cost.** Half a day, most of it in making the generated document look like Governance
-AI produced it rather than a script. No new service; a document-generation library and
-one template per part.
+AI produced it rather than a script. No new service, and in the end no library either:
+Word opens HTML natively when it is served as `application/msword`, which avoids taking
+on a `.docx` generator for two fixed documents.
 
 ---
 

@@ -574,3 +574,46 @@
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   What you told us — the declared context, recorded on the pack.
+   A two-column definition list that collapses to stacked rows on a phone.
+   --------------------------------------------------------------------------- */
+
+.declared-context {
+  margin: 30px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.declared-context-row {
+  display: grid;
+  /* min-content on the label so a long answer never squeezes it to nothing;
+     a bare 1fr track is minmax(auto, 1fr) and would let the answer win. */
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+  gap: 4px 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  break-inside: avoid;
+}
+
+.declared-context dt {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 2px;
+}
+
+.declared-context dd {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink);
+  max-width: 60ch;
+}
+
+@media (max-width: 560px) {
+  .declared-context-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+}

@@ -68,6 +68,14 @@ export function PolicyDocument({ orgName, token, documentFields = {} }: PolicyDo
           <p className="doc-kind">Part 3</p>
           <h1 className="doc-title">{POLICY_TITLE}</h1>
           <p className="doc-standfirst">{POLICY_STANDFIRST}</p>
+          {token && (
+            <a
+              className="doc-download-link no-print"
+              href={`/api/download?token=${encodeURIComponent(token)}&doc=policy`}
+            >
+              Download as a Word document
+            </a>
+          )}
           <DocumentFieldsStatus fieldIds={POLICY_FIELD_IDS} />
         </header>
 

@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { TailoringResult } from "@/lib/domain/types";
+import type { SlotSelector } from "@/lib/tailoring/schema";
 import type { TailoringStatus } from "./use-tailoring";
 
 /**
@@ -42,12 +44,20 @@ export function TailoredBlock({
   text,
   status,
   variant = "opening",
+  regenerate,
 }: {
   /** What to call this passage in the caption beneath it, e.g. "Written for your organisation." */
   caption: string;
   text?: string;
   status: TailoringStatus;
   variant?: "opening" | "scenario";
+  /**
+   * Present only when this block can be regenerated: a saved pack (there is
+   * a token to save the result against) whose current text came from the
+   * model rather than the deterministic fallback. Absent either condition,
+   * the caller passes nothing and no control renders.
+   */
+  regenerate?: RegenerateProps;
 }) {
   const className = variant === "scenario" ? "tailored-scenario" : "tailored-opening";
 
@@ -69,8 +79,94 @@ export function TailoredBlock({
   return (
     <figure className={className}>
       <blockquote className="tailored-text">{text}</blockquote>
-      <figcaption className="tailored-caption">{caption}</figcaption>
+      <figcaption className="tailored-caption">
+        {caption}
+        {regenerate && <RegenerateControl {...regenerate} />}
+      </figcaption>
     </figure>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Regenerate control.
+//
+// A quiet correction affordance, not a "roll the dice" button: it sits in
+// the caption line of the passage it redoes, reads as plain text with an
+// underline until hovered/focused, and never appears unless there is both
+// somewhere to save the result (a token) and a model-written sentence in
+// front of the reader to actually be dissatisfied with.
+// ---------------------------------------------------------------------------
+
+export interface RegenerateProps {
+  token: string;
+  selector: SlotSelector;
+  onRegenerated: (text: string) => void;
+}
+
+type RegenerateState = "idle" | "loading" | "error";
+
+interface RegenerateApiFailure {
+  message?: string;
+}
+
+export function RegenerateControl({ token, selector, onRegenerated }: RegenerateProps) {
+  const [state, setState] = useState<RegenerateState>("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleClick() {
+    setState("loading");
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/tailor/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, ...selector }),
+      });
+
+      const body = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const failure = body as RegenerateApiFailure | null;
+        setState("error");
+        setMessage(failure?.message ?? "That didn't work. The previous wording is still shown.");
+        return;
+      }
+
+      const text = (body as { text?: string } | null)?.text;
+      if (!text) {
+        setState("error");
+        setMessage("That didn't produce usable text. The previous wording is still shown.");
+        return;
+      }
+
+      onRegenerated(text);
+      setState("idle");
+    } catch {
+      setState("error");
+      setMessage("That didn't reach the server. The previous wording is still shown.");
+    }
+  }
+
+  return (
+    <span className="regenerate no-print">
+      {" · "}
+      <button
+        type="button"
+        className="regenerate-button"
+        onClick={handleClick}
+        disabled={state === "loading"}
+        aria-label="Regenerate this passage"
+      >
+        {state === "loading" ? "Regenerating…" : "Regenerate"}
+      </button>
+      {state === "error" && message && (
+        <span className="regenerate-error" role="alert">
+          {" "}
+          {message}
+        </span>
+      )}
+    </span>
   );
 }
 
