@@ -40,7 +40,7 @@ Status vocabulary: **DONE** / **PARTIAL** / **NOT DONE** / **CANNOT VERIFY**.
 |---|---|---|
 | Wizard works end to end onto a branded page | DONE | Verified in-browser repeatedly, including the 7/8-with-red-line case. |
 | Generation endpoint rate limited | DONE | `lib/api/rate-limit.ts` — `MAX_PER_MINUTE = 20`, `MAX_PER_HOUR = 60`, per IP, KV-backed. Applied in `/api/packs`, `/api/tailor`, `/api/checklist`, `/api/document-fields`, `/api/email-link`. |
-| Deployed on Vercel | CANNOT VERIFY | Confirmed by the operator that the environment variables are set. The deployment was not reachable from this machine, so neither its currency nor its behaviour was checked. See Gaps. |
+| Deployed on Vercel | DONE | https://ai-bare-minimum-pack-generator.vercel.app — exercised end to end against production: pack creation (KV write), tailoring (Workers AI via AI Gateway, all four slots `model`), regenerate, Word download, document fields, checklist, and persistence across reload. Production CSP correctly omits `unsafe-eval`; `/admin` returns 307. |
 
 ---
 
@@ -121,7 +121,7 @@ Status vocabulary: **DONE** / **PARTIAL** / **NOT DONE** / **CANNOT VERIFY**.
 | Presentation | DONE (outline) — `docs/presentation-outline.md` |
 | Batched client questions | DONE — `docs/client-questions.md` |
 | Change requests pitched | DONE — `docs/change-requests.md`, five, one recommended for parking |
-| Deployed link | CANNOT VERIFY |
+| Deployed link | DONE — https://ai-bare-minimum-pack-generator.vercel.app |
 
 ---
 
@@ -164,10 +164,22 @@ rewritten into a clean sheet.
 
 ### Open
 
-4. **The deployed Vercel instance is unverified.** Environment variables are
-   confirmed set, but neither the deployment's currency nor its behaviour was
-   checked from here. A great deal has landed since; this needs a deployed URL
-   and a pass over it.
+4. **The deployed Vercel instance — was unverified, now verified, and testing
+   it found a bug the whole suite had missed.** Regenerate returned 404 "This
+   pack has no tailored text to regenerate" on production, and would have done
+   so for every real pack: `/api/tailor` generated the tailored text, returned
+   it to the page and forgot it, so `pack.tailoring` stayed null in KV forever.
+   Regenerate refuses to touch a pack with no stored tailoring, so the feature
+   was unreachable in the real flow. Its 21 tests passed because they construct
+   a stored pack that already carries tailoring — a state nothing in the
+   product produced. The gap predated regenerate: `useTailoring` already
+   assumed a saved pack might carry its tailoring, so every return visit was
+   paying for another twenty-second model call.
+
+   Worth recording as a method finding, not just a bug. A green suite and a
+   clean local build said the feature worked; one request to the deployed
+   instance said it never had. The tests were self-consistent and wrong about
+   the world.
 
 5. **Phone testing is emulated, not physical.** Measurements are real — at
    375px the declared-context list collapses to one column, there is no
