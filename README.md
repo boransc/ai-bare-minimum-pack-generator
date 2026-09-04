@@ -29,23 +29,50 @@ Put these in `.env.local`, and the same values in the Vercel project settings.
 | `CF_KV_NAMESPACE_ID` | yes | KV namespace for packs, rate limits and the tailoring cache |
 | `APP_PASSCODE` | for `/admin` | You choose this. Unset means `/admin` refuses everything rather than opening. |
 | `TAILORING_ENABLED` | no | Set to `false` to serve deterministic packs only. No deploy needed. |
-| `EMAIL_FROM` | no | Verified sender address. Required for any email sending. |
-| `BREVO_API_KEY` | no | Turns on emailing the return link. Preferred — verifies a single address, so no domain needed. |
+| `EMAIL_FROM` | no | Sender address. Required for any email sending. On SMTP it must be `SMTP_USER`'s own address or a verified alias. |
+| `SMTP_HOST` `SMTP_USER` `SMTP_PASSWORD` | no | Turns on emailing the return link through a mailbox you already own. Preferred — see below. `SMTP_PORT` defaults to 465. All three must be set; a partial block is ignored. |
+| `BREVO_API_KEY` | no | Alternative sender. Verifies a single address, so no domain needed, but a new account waits in a manual review queue. |
 | `RESEND_API_KEY` | no | Alternative sender. Needs a verified sending *domain*. |
 
 **On email.** Sending is optional and off until credentials exist; the page
 detects this on the server and never offers to send what it cannot send — it
 takes the address for Governance AI instead and says so.
 
-[Resend](https://resend.com) needs a verified sending domain, which means DNS
-records on a domain you own. [Brevo](https://developers.brevo.com/reference/sendtransacemail)
-verifies a single sender *address* on its free tier (300/day), so an ordinary
-mailbox works and nothing has to be bought — which is why it is the default
-adapter. The trade-off is honest to state: since the
+Three adapters, in the order they are preferred. The order is the result of
+finding out the hard way which of them can actually deliver to a stranger.
+
+**SMTP, through a mailbox the organisation already owns.** The shortest route
+and the default. It needs no DNS change and nobody's approval: the domain
+already receives mail, so its sender authentication already exists, and an
+authenticated submission from its own account inherits it. `governanceai.io`
+runs on Google Workspace, so this is an
+[app password](https://support.google.com/accounts/answer/185833) on the
+sending account — which needs 2-step verification enabled, and an
+administrator who has not disabled app passwords. Set `SMTP_HOST=smtp.gmail.com`,
+`SMTP_USER` to that mailbox, `SMTP_PASSWORD` to the app password, and
+`EMAIL_FROM` to the same address, because Google will only send as the
+authenticated user or a verified alias.
+[Vercel blocks outbound port 25 but leaves 465 and 587 open](https://vercel.com/kb/guide/serverless-functions-and-smtp);
+the adapter defaults to 465 and fully awaits the send, which matters because
+work still in flight when a serverless function returns is dropped.
+
+**[Brevo](https://developers.brevo.com/reference/sendtransacemail)** verifies a
+single sender *address* on its free tier (300/day), so no domain is needed. It
+was the original default and is no longer, because a new account is held behind
+a manual review — *"Your SMTP account is not yet activated. Please contact us at
+contact@brevo.com to request activation"* — with no published timeline. Nothing
+in this repo can bypass that, and an SMTP key will not either: Brevo calls the
+transactional service "SMTP" even over the REST API.
+
+**[Resend](https://resend.com)** needs a verified sending domain, which means
+DNS records on a domain you own. Its shared `onboarding@resend.dev` sender
+[only ever delivers to the account owner's own address](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain),
+so it is a demo, not a product.
+
+One trade-off worth stating whichever adapter is used: since the
 [2024 Gmail and Yahoo bulk sender rules](https://help.brevo.com/hc/en-us/articles/14925263522578-Comply-with-Gmail-Yahoo-and-Microsoft-s-requirements-for-email-senders),
-mail sent *from* a free address is routinely filtered to spam because it cannot
-be authenticated. Good enough to demonstrate; a real deployment should send from
-`governanceai.io`, which is a DNS change on Governance AI's side.
+mail sent *from* an unauthenticated free address is routinely filtered to spam.
+Sending from `governanceai.io`'s own mailbox is what avoids that.
 
 Run `npm run email-check` to see what is configured, and
 `EMAIL_TO=you@example.com npm run email-check` to send a real message and have

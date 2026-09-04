@@ -44,6 +44,17 @@ describe("email configuration", () => {
         ? "CONFIGURED"
         : "not configured — the page offers to take an address instead",
     );
+    if (provider === "smtp") {
+      console.log("  host:      ", `${process.env.SMTP_HOST}:${process.env.SMTP_PORT ?? 465}`);
+      console.log("  user:      ", maskAddress(process.env.SMTP_USER));
+    }
+    if (!provider) {
+      console.log("");
+      console.log("  To send through a mailbox you already own, set these four:");
+      console.log("    SMTP_HOST, SMTP_USER, SMTP_PASSWORD, EMAIL_FROM");
+      console.log("  (SMTP_PORT defaults to 465.) This needs no DNS change and");
+      console.log("  no approval from a provider, so it is the shortest route.");
+    }
     if (!recipient) {
       console.log("");
       console.log("  To send a real message:");
@@ -53,7 +64,7 @@ describe("email configuration", () => {
 
     // Reporting, not asserting. An unconfigured environment is a valid state,
     // and the product is built to behave honestly in it.
-    expect(["brevo", "resend", null]).toContain(provider);
+    expect(["smtp", "brevo", "resend", null]).toContain(provider);
   });
 });
 
@@ -101,6 +112,20 @@ describe.skipIf(!recipient)("email delivery", () => {
       }
       if (result.reason.includes("400")) {
         console.log("  400 usually means EMAIL_FROM is not a verified sender.");
+      }
+      if (result.reason.includes("smtp")) {
+        console.log("  SMTP failures, by what the message above says:");
+        console.log("   * 'Invalid login' / 535: on Google Workspace this is an");
+        console.log("     ordinary account password. It needs an app password,");
+        console.log("     which requires 2-step verification on the account, and");
+        console.log("     an administrator who has not disabled app passwords.");
+        console.log("   * 'Username and Password not accepted' can also mean the");
+        console.log("     app password was pasted with its spaces. Strip them.");
+        console.log("   * ETIMEDOUT or ECONNREFUSED: the port is blocked. Use 465.");
+        console.log("     Vercel blocks outbound 25 but leaves 465 and 587 open.");
+        console.log("   * 'from address does not match': Google will only send as");
+        console.log("     the authenticated user or one of its verified aliases,");
+        console.log("     so EMAIL_FROM has to be SMTP_USER's own address.");
       }
     } else {
       console.log("");

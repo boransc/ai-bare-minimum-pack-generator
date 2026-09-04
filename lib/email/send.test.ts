@@ -14,7 +14,17 @@ import { emailProvider, emailSendingConfigured, sendReturnLink } from "./send";
 
 const LINK = "https://example.test/pack/abc123token";
 
-const ENV_KEYS = ["BREVO_API_KEY", "RESEND_API_KEY", "EMAIL_FROM"] as const;
+const ENV_KEYS = [
+  "BREVO_API_KEY",
+  "RESEND_API_KEY",
+  "EMAIL_FROM",
+  // Cleared too, or an SMTP test leaks its host into every later test and
+  // silently changes which provider they select.
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASSWORD",
+] as const;
 const saved: Record<string, string | undefined> = {};
 
 beforeEach(() => {
@@ -86,6 +96,36 @@ describe("provider selection", () => {
     process.env.RESEND_API_KEY = "resend-key";
     process.env.EMAIL_FROM = "sender@example.test";
     expect(emailProvider()).toBe("resend");
+  });
+
+  it("uses SMTP when a host, user and password are all present", () => {
+    process.env.SMTP_HOST = "smtp.example.test";
+    process.env.SMTP_USER = "sender@example.test";
+    process.env.SMTP_PASSWORD = "app-password";
+    process.env.EMAIL_FROM = "sender@example.test";
+    expect(emailProvider()).toBe("smtp");
+  });
+
+  it("ignores a half-configured SMTP block rather than failing every send", () => {
+    // A host with no credentials is someone midway through setting this up.
+    // Choosing "smtp" here would take precedence over a Brevo key that works
+    // and then fail on every attempt.
+    process.env.SMTP_HOST = "smtp.example.test";
+    process.env.BREVO_API_KEY = "brevo-key";
+    process.env.EMAIL_FROM = "sender@example.test";
+    expect(emailProvider()).toBe("brevo");
+  });
+
+  it("prefers SMTP over both REST providers", () => {
+    // SMTP goes through a mailbox the organisation already owns, so it needs
+    // no DNS change and waits in nobody's approval queue.
+    process.env.SMTP_HOST = "smtp.example.test";
+    process.env.SMTP_USER = "sender@example.test";
+    process.env.SMTP_PASSWORD = "app-password";
+    process.env.BREVO_API_KEY = "brevo-key";
+    process.env.RESEND_API_KEY = "resend-key";
+    process.env.EMAIL_FROM = "sender@example.test";
+    expect(emailProvider()).toBe("smtp");
   });
 });
 
